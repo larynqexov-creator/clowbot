@@ -5,7 +5,7 @@ param(
   [int]$FailuresBeforeRestart = 3,
   [int]$HttpTimeoutMs = 1500,
   [string]$HealthUrl = 'http://127.0.0.1:18789/health',
-  [string]$TelegramTarget = '@Konstantin_Geomaster',
+  [string]$TelegramTarget = '',
   [string]$TelegramChannel = 'telegram',
   [string]$Mode = 'auto', # auto|service|task
   [string]$ServiceName = 'clawdbot-gateway',

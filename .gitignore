@@ -12,5 +12,9 @@ __pycache__/
 .venv/
 *.egg-info/
 
+# always-on local config
+scripts/always_on/always_on_config.json
+
+
 # tooling
 .DS_Store
