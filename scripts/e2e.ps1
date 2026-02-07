@@ -14,6 +14,13 @@ Exit codes: 0=ok, 1=fail
 
 $ErrorActionPreference = 'Stop'
 
+# Force UTF-8 output (avoid mojibake)
+try {
+  [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+  [Console]::InputEncoding = [System.Text.UTF8Encoding]::new($false)
+  $OutputEncoding = [System.Text.UTF8Encoding]::new($false)
+} catch {}
+
 function Invoke-Step {
   param(
     [Parameter(Mandatory=$true)][string]$Name,
@@ -26,12 +33,24 @@ function Invoke-Step {
   }
 }
 
-function Dump-ComposeLogs {
-  param([string]$RepoRoot)
+function Dump-ComposeStateAndLogs {
+  param(
+    [Parameter(Mandatory=$true)][string]$RepoRoot,
+    [Parameter(Mandatory=$true)][string]$FailLogPath
+  )
   try {
     Push-Location $RepoRoot
-    Write-Host "--- docker compose logs (tail=200) ---" -ForegroundColor Yellow
-    docker compose logs --tail=200 api worker postgres redis
+    $dir = Split-Path -Parent $FailLogPath
+    if (-not (Test-Path -LiteralPath $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
+
+    $header = "# ClowBot E2E failure dump\n# time=" + (Get-Date).ToString('s') + "\n\n"
+    Set-Content -LiteralPath $FailLogPath -Value $header -Encoding UTF8
+
+    Add-Content -LiteralPath $FailLogPath -Value "--- docker compose ps ---\n" -Encoding UTF8
+    (docker compose ps | Out-String) | Add-Content -LiteralPath $FailLogPath -Encoding UTF8
+
+    Add-Content -LiteralPath $FailLogPath -Value "\n--- docker compose logs --tail=200 ---\n" -Encoding UTF8
+    (docker compose logs --tail=200 api worker postgres redis qdrant minio | Out-String) | Add-Content -LiteralPath $FailLogPath -Encoding UTF8
   } catch {
     # best-effort
   } finally {
@@ -41,6 +60,10 @@ function Dump-ComposeLogs {
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $startedAt = Get-Date
+
+$artDir = Join-Path $PSScriptRoot '_artifacts'
+$lastJsonPath = Join-Path $artDir 'e2e_last.json'
+$failLogPath = $null
 
 $result = [ordered]@{
   ok = $false
@@ -59,6 +82,7 @@ $result = [ordered]@{
     grants_count = $null
   }
   error = $null
+  fail_log = $null
 }
 
 try {
@@ -147,13 +171,30 @@ try {
 } catch {
   $result.ok = $false
   $result.error = $_.Exception.Message
-  Dump-ComposeLogs -RepoRoot $repo
+
+  try {
+    if (-not (Test-Path -LiteralPath $artDir)) { New-Item -ItemType Directory -Path $artDir | Out-Null }
+    $ts = (Get-Date).ToString('yyyyMMdd-HHmmss')
+    $failLogPath = Join-Path $artDir ("e2e_fail_$ts.log")
+    Dump-ComposeStateAndLogs -RepoRoot $repo -FailLogPath $failLogPath
+    $result.fail_log = $failLogPath
+  } catch {
+    # ignore
+  }
 } finally {
   $result.duration_ms = [int]([TimeSpan]((Get-Date) - $startedAt)).TotalMilliseconds
+
+  # Always persist last result
+  try {
+    if (-not (Test-Path -LiteralPath $artDir)) { New-Item -ItemType Directory -Path $artDir | Out-Null }
+    ($result | ConvertTo-Json -Depth 10) | Set-Content -LiteralPath $lastJsonPath -Encoding UTF8
+  } catch {}
+
   Pop-Location -ErrorAction SilentlyContinue
 }
 
 # Print exactly one compact JSON line (for CI/check usage)
-($result | ConvertTo-Json -Depth 10 -Compress) | Write-Output
+$compact = ($result | ConvertTo-Json -Depth 10 -Compress)
+Write-Output ("E2E_JSON=$compact")
 
 if ($result.ok) { exit 0 } else { exit 1 }
