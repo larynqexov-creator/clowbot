@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
 
-from app.core.security import require_admin_token
 from app.core.db import SessionLocal
+from app.core.security import require_admin_token
 from app.models.tables import Tenant
 from app.util.ids import new_uuid
 from app.util.time import now_utc

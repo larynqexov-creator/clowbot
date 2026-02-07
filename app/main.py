@@ -5,16 +5,16 @@ import time
 from typing import Any
 
 from fastapi import FastAPI
-from sqlalchemy import text
 from redis import Redis
+from sqlalchemy import text
 
-from app.core.config import settings
-from app.core.logging import configure_logging
-from app.core.db import engine
 from app.api.routers.admin import router as admin_router
 from app.api.routers.science_grants import router as science_grants_router
-from app.memory.vector_store import ensure_qdrant_collection, qdrant_ready
+from app.core.config import settings
+from app.core.db import engine
+from app.core.logging import configure_logging
 from app.memory.object_store import ensure_minio_bucket, minio_ready
+from app.memory.vector_store import ensure_qdrant_collection, qdrant_ready
 
 configure_logging(settings.LOG_LEVEL)
 log = logging.getLogger("app")

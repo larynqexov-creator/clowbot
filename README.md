@@ -5,6 +5,10 @@ Windows PowerShell runbook (no make/chmod):
 ## Start
 ```powershell
 cd C:\Users\maste\clawd\clowbot
+
+# Create local docker env file
+Copy-Item .\.env.docker.example .\.env.docker
+
 docker compose pull
 docker compose up -d --build
 ```
@@ -29,7 +33,11 @@ Expected: `ok=true` and `deps.* = true`.
 ## Create tenant + run workflow
 Option 1 (recommended): run the script:
 ```powershell
+# waits up to 120s by default
 powershell -ExecutionPolicy Bypass -File .\scripts\run_workflow_unique.ps1
+
+# or override timeout
+powershell -ExecutionPolicy Bypass -File .\scripts\run_workflow_unique.ps1 -TimeoutSeconds 180
 ```
 
 Option 2 (manual with Invoke-RestMethod):
@@ -56,3 +64,4 @@ Invoke-RestMethod -Method Get -Uri ("http://localhost:8000/science/grants/workfl
 - Qdrant/MinIO ports are **not published to host** to avoid port collisions (they are reachable from other containers via service names).
 - `deps_ready` gate waits for Postgres/Redis and then probes Qdrant/MinIO before starting API/worker (reduces race/flakiness).
 - `/admin/tenants` is idempotent: create-or-get by `name` (no 500 on unique collisions).
+- This repo is public: `.env.docker` is **gitignored**. Use `.env.docker.example` as a template.

@@ -24,7 +24,15 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
   "pytest==8.3.2",
+  "ruff==0.9.7",
 ]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E501"]
 
 [tool.setuptools.packages.find]
 include = ["app*"]

@@ -1,7 +1,7 @@
-import os
-import time
 import json
+import os
 import socket
+import time
 import urllib.request
 
 TIMEOUT = int(os.getenv('TIMEOUT_S', '120'))

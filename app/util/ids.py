@@ -5,7 +5,7 @@ import uuid
 from sqlalchemy.orm import Session
 
 from app.core.db import SessionLocal
-from app.models.tables import Tenant, User, AuditLog
+from app.models.tables import AuditLog, Tenant, User
 from app.util.time import now_utc
 
 
