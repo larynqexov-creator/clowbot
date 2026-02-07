@@ -1,0 +1,10 @@
+﻿{
+    "Mode":  "task",
+    "ServiceName":  "clawdbot-gateway",
+    "TaskName":  "Clawdbot Gateway (Always On)",
+    "WatchdogTaskName":  "Clawdbot Gateway Watchdog",
+    "LogsDir":  "C:\\Users\\maste\\clawd\\clowbot\\scripts\\always_on\\logs",
+    "GatewayHost":  "127.0.0.1",
+    "GatewayPort":  18789,
+    "FailuresBeforeRestart":  3
+}

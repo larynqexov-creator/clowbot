@@ -1,4 +1,5 @@
 param(
+  [string]$ConfigPath = "$PSScriptRoot\always_on_config.json",
   [string]$LogsDir = "$PSScriptRoot\logs"
 )
 
@@ -6,6 +7,13 @@ $ErrorActionPreference = 'Stop'
 
 function Ensure-Dir($p) {
   if (-not (Test-Path -LiteralPath $p)) { New-Item -ItemType Directory -Path $p | Out-Null }
+}
+
+if (Test-Path -LiteralPath $ConfigPath) {
+  try {
+    $cfg = Get-Content -Raw -LiteralPath $ConfigPath | ConvertFrom-Json
+    if ($cfg.LogsDir) { $LogsDir = [string]$cfg.LogsDir }
+  } catch { }
 }
 
 Ensure-Dir $LogsDir

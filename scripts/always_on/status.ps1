@@ -8,10 +8,10 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 
-function Test-Tcp($host, $port) {
+function Test-Tcp($h, $port) {
   try {
     $client = New-Object System.Net.Sockets.TcpClient
-    $iar = $client.BeginConnect($host, $port, $null, $null)
+    $iar = $client.BeginConnect($h, $port, $null, $null)
     $ok = $iar.AsyncWaitHandle.WaitOne(800)
     if (-not $ok) { $client.Close(); return $false }
     $client.EndConnect($iar)

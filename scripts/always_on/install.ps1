@@ -25,6 +25,7 @@ Ensure-Dir $LogsDir
 
 $runner = Join-Path $PSScriptRoot 'runner.ps1'
 $watchdog = Join-Path $PSScriptRoot 'watchdog.ps1'
+$configPath = Join-Path $PSScriptRoot 'always_on_config.json'
 
 # Prefer Windows Service only if admin. Otherwise fall back to Scheduled Task.
 if ($Mode -eq 'auto') {
@@ -32,6 +33,19 @@ if ($Mode -eq 'auto') {
 }
 
 Write-Output "Installing always-on gateway in mode: $Mode"
+
+# Write config (used by runner/watchdog so task command lines stay short)
+$cfg = [pscustomobject]@{
+  Mode = $Mode
+  ServiceName = $ServiceName
+  TaskName = $TaskName
+  WatchdogTaskName = $WatchdogTaskName
+  LogsDir = $LogsDir
+  GatewayHost = $GatewayHost
+  GatewayPort = $GatewayPort
+  FailuresBeforeRestart = $FailuresBeforeRestart
+}
+($cfg | ConvertTo-Json -Depth 4) | Out-File -LiteralPath $configPath -Encoding utf8
 
 if ($Mode -eq 'service') {
   if (-not (Is-Admin)) {
@@ -42,7 +56,7 @@ if ($Mode -eq 'service') {
 
 if ($Mode -eq 'service') {
   # Create/update service
-  $binPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$runner`" -LogsDir `"$LogsDir`""
+  $binPath = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File $runner"
 
   $existing = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
   if ($existing) {
@@ -62,7 +76,7 @@ if ($Mode -eq 'service') {
 
   # Install watchdog as Scheduled Task (works even if gateway is a service)
   Write-Output "Installing watchdog task (runs every minute): $WatchdogTaskName"
-  $wdCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$watchdog`" -Mode service -ServiceName `"$ServiceName`" -GatewayHost `"$GatewayHost`" -GatewayPort $GatewayPort -FailuresBeforeRestart $FailuresBeforeRestart -LogsDir `"$LogsDir`""
+  $wdCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File $watchdog"
   schtasks /Create /F /TN "$WatchdogTaskName" /SC MINUTE /MO 1 /RL HIGHEST /TR "$wdCmd" | Out-Null
 
   Write-Output "Done."
@@ -70,22 +84,23 @@ if ($Mode -eq 'service') {
 }
 
 # TASK MODE
-Write-Output "Installing gateway task (at startup + on logon): $TaskName"
+Write-Output "Installing Scheduled Tasks under current user (no admin required)"
 
-$gwCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$runner`" -LogsDir `"$LogsDir`""
+# Use schtasks.exe for compatibility across Windows builds.
+# NOTE: Creating tasks may require elevation depending on local policy.
 
-# Create task that runs at startup
-schtasks /Create /F /TN "$TaskName" /SC ONSTART /RL HIGHEST /TR "$gwCmd" | Out-Null
-# Also create logon trigger by duplicating task name with suffix (simple + reliable)
-$taskLogon = "$TaskName (OnLogon)"
-schtasks /Create /F /TN "$taskLogon" /SC ONLOGON /RL HIGHEST /TR "$gwCmd" | Out-Null
+$ps = "powershell.exe"
+$gwCmd = "$ps -NoProfile -ExecutionPolicy Bypass -File `"$runner`""
+$wdCmd = "$ps -NoProfile -ExecutionPolicy Bypass -File `"$watchdog`""
 
-Write-Output "Installing watchdog task (runs every minute): $WatchdogTaskName"
-$wdCmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -File `"$watchdog`" -Mode task -TaskName `"$TaskName`" -GatewayHost `"$GatewayHost`" -GatewayPort $GatewayPort -FailuresBeforeRestart $FailuresBeforeRestart -LogsDir `"$LogsDir`""
-schtasks /Create /F /TN "$WatchdogTaskName" /SC MINUTE /MO 1 /RL HIGHEST /TR "$wdCmd" | Out-Null
+Write-Output "Registering task: $TaskName"
+& schtasks.exe @('/Create','/F','/TN', $TaskName, '/SC','ONLOGON','/RL','LIMITED','/TR', $gwCmd) | Out-Null
 
-# Kick it once now
-try { schtasks /Run /TN "$TaskName" | Out-Null } catch {}
+Write-Output "Registering task: $WatchdogTaskName"
+& schtasks.exe @('/Create','/F','/TN', $WatchdogTaskName, '/SC','MINUTE','/MO','1','/RL','LIMITED','/TR', $wdCmd) | Out-Null
+
+# Kick gateway once now
+try { schtasks.exe /Run /TN "$TaskName" | Out-Null } catch {}
 
 Write-Output "Done."
 Write-Output "Logs: $LogsDir"

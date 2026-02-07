@@ -6,10 +6,16 @@ param(
 $ErrorActionPreference = 'Stop'
 
 Write-Output "Removing Scheduled Tasks (if present)..."
-try { schtasks /End /TN "$TaskName" | Out-Null } catch {}
-try { schtasks /Delete /TN "$TaskName" /F | Out-Null } catch {}
-try { schtasks /End /TN "$WatchdogTaskName" | Out-Null } catch {}
-try { schtasks /Delete /TN "$WatchdogTaskName" /F | Out-Null } catch {}
+# Prefer schtasks.exe (works even without ScheduledTasks module)
+try { schtasks.exe /End /TN "$TaskName" | Out-Null } catch {}
+try { schtasks.exe /Delete /TN "$TaskName" /F | Out-Null } catch {}
+
+try { schtasks.exe /End /TN "$WatchdogTaskName" | Out-Null } catch {}
+try { schtasks.exe /Delete /TN "$WatchdogTaskName" /F | Out-Null } catch {}
+
+# Backward-compat cleanup (older names)
+try { schtasks.exe /End /TN "$TaskName (OnLogon)" | Out-Null } catch {}
+try { schtasks.exe /Delete /TN "$TaskName (OnLogon)" /F | Out-Null } catch {}
 
 Write-Output "Removing Windows Service (if present)..."
 $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue

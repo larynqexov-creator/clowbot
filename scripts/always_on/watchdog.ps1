@@ -1,4 +1,5 @@
 param(
+  [string]$ConfigPath = "$PSScriptRoot\always_on_config.json",
   [string]$GatewayHost = '127.0.0.1',
   [int]$GatewayPort = 18789,
   [int]$FailuresBeforeRestart = 3,
@@ -12,6 +13,23 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# Load config if present (keeps schtasks /TR short)
+if (Test-Path -LiteralPath $ConfigPath) {
+  try {
+    $cfg = Get-Content -Raw -LiteralPath $ConfigPath | ConvertFrom-Json
+    if ($cfg.GatewayHost) { $GatewayHost = [string]$cfg.GatewayHost }
+    if ($cfg.GatewayPort) { $GatewayPort = [int]$cfg.GatewayPort }
+    if ($cfg.FailuresBeforeRestart) { $FailuresBeforeRestart = [int]$cfg.FailuresBeforeRestart }
+    if ($cfg.Mode) { $Mode = [string]$cfg.Mode }
+    if ($cfg.ServiceName) { $ServiceName = [string]$cfg.ServiceName }
+    if ($cfg.TaskName) { $TaskName = [string]$cfg.TaskName }
+    if ($cfg.WatchdogTaskName) { $WatchdogTaskName = [string]$cfg.WatchdogTaskName }
+    if ($cfg.LogsDir) { $LogsDir = [string]$cfg.LogsDir }
+  } catch {
+    # ignore config parse errors
+  }
+}
 
 function Ensure-Dir($p) {
   if (-not (Test-Path -LiteralPath $p)) { New-Item -ItemType Directory -Path $p | Out-Null }
@@ -41,10 +59,10 @@ function With-Lock($path, [scriptblock]$body) {
   }
 }
 
-function Test-GatewayTcp($host, $port) {
+function Test-GatewayTcp($h, $port) {
   try {
     $client = New-Object System.Net.Sockets.TcpClient
-    $iar = $client.BeginConnect($host, $port, $null, $null)
+    $iar = $client.BeginConnect($h, $port, $null, $null)
     $ok = $iar.AsyncWaitHandle.WaitOne(800)
     if (-not $ok) { $client.Close(); return $false }
     $client.EndConnect($iar)
