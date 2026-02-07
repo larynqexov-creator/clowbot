@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "clowbot"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+  "fastapi==0.115.0",
+  "uvicorn[standard]==0.30.6",
+  "pydantic==2.8.2",
+  "pydantic-settings==2.4.0",
+  "SQLAlchemy==2.0.32",
+  "psycopg[binary]==3.2.1",
+  "alembic==1.13.2",
+  "celery==5.4.0",
+  "redis==5.0.8",
+  "qdrant-client==1.10.1",
+  "minio==7.2.8",
+  "httpx==0.27.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==8.3.2",
+]
+
+[tool.setuptools.packages.find]
+include = ["app*"]

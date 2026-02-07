@@ -1,0 +1,35 @@
+from __future__ import annotations
+
+from pydantic_settings import BaseSettings
+
+
+class Settings(BaseSettings):
+    APP_NAME: str = "clowbot"
+    APP_ENV: str = "local"
+    LOG_LEVEL: str = "INFO"
+
+    ADMIN_TOKEN: str = "change-me-admin-token"
+    AUTH_DISABLED: bool = False
+
+    DATABASE_URL: str
+
+    REDIS_URL: str = "redis://localhost:6379/0"
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+    CELERY_TASK_ALWAYS_EAGER: bool = False
+
+    QDRANT_URL: str = "http://localhost:6333"
+    QDRANT_COLLECTION: str = "memory"
+
+    MINIO_ENDPOINT: str = "localhost:9000"
+    MINIO_ACCESS_KEY: str = "minioadmin"
+    MINIO_SECRET_KEY: str = "minioadmin"
+    MINIO_BUCKET: str = "clowbot"
+    MINIO_SECURE: bool = False
+
+    class Config:
+        env_file = ".env"
+        extra = "ignore"
+
+
+settings = Settings()
