@@ -1,4 +1,3 @@
-import os
 
 
 def test_import_app(monkeypatch):
