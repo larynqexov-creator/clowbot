@@ -132,7 +132,7 @@ function Read-State() {
   if (Test-Path -LiteralPath $StatePath) {
     try { return (Get-Content -Raw -LiteralPath $StatePath | ConvertFrom-Json) } catch { }
   }
-  return [pscustomobject]@{ failures = 0; lastRestart = $null; lastOk = $null }
+  return [pscustomobject]@{ failures = 0; lastRestart = $null; lastOk = $null; wasFailing = $false }
 }
 
 function Write-State($st) {
@@ -205,18 +205,20 @@ With-Lock $LockPath {
   $ok = ($tcpOk -and $healthOk -and $tgOk)
 
   if ($ok) {
-    if ($st.failures -ne 0) {
-      Log "Gateway OK again (reset failures from $($st.failures) -> 0)"
+    if ($st.wasFailing -eq $true -or $st.failures -ne 0) {
+      Log "Gateway OK again (failures was $($st.failures))"
       Send-Telegram ("gateway ok again; time={0}" -f (Get-Date).ToString('s'))
     }
     $st.failures = 0
+    $st.wasFailing = $false
     $st.lastOk = (Get-Date).ToString('o')
     Write-State $st
     return
   }
 
   $st.failures = [int]$st.failures + 1
-  Log "Health check failed (tcp=$tcpOk http=$httpOk tg=$tgOk) failures=$($st.failures)/$FailuresBeforeRestart"
+  $st.wasFailing = $true
+  Log "Health check failed (tcp=$tcpOk health=$healthOk tg=$tgOk) failures=$($st.failures)/$FailuresBeforeRestart"
   Write-State $st
 
   if ($st.failures -ge $FailuresBeforeRestart) {
