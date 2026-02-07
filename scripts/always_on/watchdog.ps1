@@ -3,6 +3,10 @@ param(
   [string]$GatewayHost = '127.0.0.1',
   [int]$GatewayPort = 18789,
   [int]$FailuresBeforeRestart = 3,
+  [int]$HttpTimeoutMs = 1500,
+  [string]$HealthUrl = 'http://127.0.0.1:18789/health',
+  [string]$TelegramTarget = '@Konstantin_Geomaster',
+  [string]$TelegramChannel = 'telegram',
   [string]$Mode = 'auto', # auto|service|task
   [string]$ServiceName = 'clawdbot-gateway',
   [string]$TaskName = 'Clawdbot Gateway (Always On)',
@@ -21,6 +25,10 @@ if (Test-Path -LiteralPath $ConfigPath) {
     if ($cfg.GatewayHost) { $GatewayHost = [string]$cfg.GatewayHost }
     if ($cfg.GatewayPort) { $GatewayPort = [int]$cfg.GatewayPort }
     if ($cfg.FailuresBeforeRestart) { $FailuresBeforeRestart = [int]$cfg.FailuresBeforeRestart }
+    if ($cfg.HttpTimeoutMs) { $HttpTimeoutMs = [int]$cfg.HttpTimeoutMs }
+    if ($cfg.HealthUrl) { $HealthUrl = [string]$cfg.HealthUrl }
+    if ($cfg.TelegramTarget) { $TelegramTarget = [string]$cfg.TelegramTarget }
+    if ($cfg.TelegramChannel) { $TelegramChannel = [string]$cfg.TelegramChannel }
     if ($cfg.Mode) { $Mode = [string]$cfg.Mode }
     if ($cfg.ServiceName) { $ServiceName = [string]$cfg.ServiceName }
     if ($cfg.TaskName) { $TaskName = [string]$cfg.TaskName }
@@ -73,19 +81,77 @@ function Test-GatewayTcp($h, $port) {
   }
 }
 
+function Test-GatewayHealthHttp($url, $timeoutMs) {
+  try {
+    $handler = New-Object System.Net.Http.HttpClientHandler
+    $client = New-Object System.Net.Http.HttpClient($handler)
+    $client.Timeout = [TimeSpan]::FromMilliseconds($timeoutMs)
+    $resp = $client.GetAsync($url).GetAwaiter().GetResult()
+    if (-not $resp.IsSuccessStatusCode) { return $false }
+    $body = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult()
+    # Expect JSON like {"ok":true,...}
+    if ($body -match '"ok"\s*:\s*true') { return $true }
+    return $false
+  } catch {
+    return $false
+  } finally {
+    if ($client) { $client.Dispose() }
+  }
+}
+
+function Get-GatewayPid() {
+  try {
+    $raw = & clawdbot gateway status --json 2>$null
+    if (-not $raw) { return $null }
+    $j = $raw | ConvertFrom-Json
+    if ($j.port -and $j.port.listeners -and $j.port.listeners.Count -gt 0) {
+      return [int]$j.port.listeners[0].pid
+    }
+    return $null
+  } catch {
+    return $null
+  }
+}
+
+function Test-TelegramConnected() {
+  try {
+    $raw = & clawdbot status --json 2>$null
+    if (-not $raw) { return $false }
+    $j = $raw | ConvertFrom-Json
+    # heuristic: channelSummary contains "Telegram" and not "error"
+    $txt = ($j.channelSummary | Out-String)
+    if ($txt -match 'Telegram' -and $txt -notmatch 'ERROR|Error|failed') { return $true }
+    return $false
+  } catch {
+    return $false
+  }
+}
+
+function Send-Telegram($text) {
+  if (-not $TelegramTarget) { return }
+  try {
+    & clawdbot message send --channel $TelegramChannel --target $TelegramTarget --message $text | Out-Null
+  } catch {
+    # don't crash watchdog due to notify errors
+    Log "Telegram notify failed: $($_.Exception.Message)"
+  }
+}
+
 function Read-State() {
   if (Test-Path -LiteralPath $StatePath) {
     try { return (Get-Content -Raw -LiteralPath $StatePath | ConvertFrom-Json) } catch { }
   }
-  return [pscustomobject]@{ failures = 0; lastRestart = $null }
+  return [pscustomobject]@{ failures = 0; lastRestart = $null; lastOk = $null }
 }
 
 function Write-State($st) {
   ($st | ConvertTo-Json -Depth 4) | Out-File -LiteralPath $StatePath -Encoding utf8
 }
 
-function Restart-Gateway() {
-  Log "Restart requested"
+function Restart-Gateway([string]$reason) {
+  $beforePid = Get-GatewayPid
+  Log "Restart requested (reason=$reason, pid_before=$beforePid)"
+  Send-Telegram ("gateway restarting; reason={0}; time={1}; pid_before={2}" -f $reason, (Get-Date).ToString('s'), $beforePid)
 
   if ($Mode -eq 'auto') {
     $svc = Get-Service -Name $ServiceName -ErrorAction SilentlyContinue
@@ -111,33 +177,69 @@ function Restart-Gateway() {
     $null = & clawdbot gateway restart 2>&1
     Log "Restarted via: clawdbot gateway restart"
   } catch {
-    Log "clawdbot restart failed, trying task kick: $($_.Exception.Message)"
+    Log "clawdbot restart failed, trying task restart: $($_.Exception.Message)"
     try {
-      schtasks /Run /TN "$TaskName" | Out-Null
-      Log "Triggered task run: $TaskName"
+      Stop-ScheduledTask -TaskName 'Clawdbot Gateway' -ErrorAction SilentlyContinue | Out-Null
+    } catch { }
+    try {
+      Start-ScheduledTask -TaskName 'Clawdbot Gateway' -ErrorAction SilentlyContinue | Out-Null
+      Log "Triggered Start-ScheduledTask: Clawdbot Gateway"
     } catch {
-      throw
+      # final fallback
+      schtasks /Run /TN "Clawdbot Gateway" | Out-Null
+      Log "Triggered schtasks run: Clawdbot Gateway"
     }
   }
+
+  Start-Sleep -Seconds 2
+  $afterPid = Get-GatewayPid
+  Log "Restart complete (pid_after=$afterPid)"
+  Send-Telegram ("gateway restarted; reason={0}; time={1}; pid_after={2}" -f $reason, (Get-Date).ToString('s'), $afterPid)
 }
 
 With-Lock $LockPath {
-  $ok = Test-GatewayTcp $GatewayHost $GatewayPort
   $st = Read-State
 
+  $tcpOk = Test-GatewayTcp $GatewayHost $GatewayPort
+  $httpOk = $false
+  if ($tcpOk) {
+    $httpOk = Test-GatewayHealthHttp $HealthUrl $HttpTimeoutMs
+  }
+  $tgOk = $false
+  if ($tcpOk -and $httpOk) {
+    $tgOk = Test-TelegramConnected
+  }
+
+  $ok = ($tcpOk -and $httpOk -and $tgOk)
+
   if ($ok) {
-    if ($st.failures -ne 0) { Log "Gateway OK (reset failures from $($st.failures) -> 0)" }
+    if ($st.failures -ne 0) {
+      Log "Gateway OK again (reset failures from $($st.failures) -> 0)"
+      Send-Telegram ("gateway ok again; time={0}" -f (Get-Date).ToString('s'))
+    }
     $st.failures = 0
+    $st.lastOk = (Get-Date).ToString('o')
     Write-State $st
     return
   }
 
   $st.failures = [int]$st.failures + 1
-  Log "Gateway NOT responding on $GatewayHost:$GatewayPort (failures=$($st.failures)/$FailuresBeforeRestart)"
+  Log "Health check failed (tcp=$tcpOk http=$httpOk tg=$tgOk) failures=$($st.failures)/$FailuresBeforeRestart"
   Write-State $st
 
   if ($st.failures -ge $FailuresBeforeRestart) {
-    Restart-Gateway
+    # cool-down: avoid restart storms
+    if ($st.lastRestart) {
+      try {
+        $lr = [DateTime]::Parse($st.lastRestart)
+        if ((Get-Date) -lt $lr.AddSeconds(60)) {
+          Log "Restart suppressed (cooldown)"
+          return
+        }
+      } catch { }
+    }
+
+    Restart-Gateway "health_timeout"
     $st.failures = 0
     $st.lastRestart = (Get-Date).ToString('o')
     Write-State $st
