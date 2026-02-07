@@ -1,0 +1,7 @@
+{
+  "TelegramChannel": "telegram",
+  "TelegramTarget": "95576236",
+  "ScheduleHours": 6,
+  "TaskName": "Clowbot E2E Nightly",
+  "TimeoutSeconds": 900
+}
