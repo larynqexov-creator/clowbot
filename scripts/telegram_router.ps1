@@ -38,6 +38,14 @@ function Send-Telegram([string]$channel, [string]$target, [string]$text) {
   & clawdbot message send --channel $channel --target $target --message $text | Out-Null
 }
 
+function Safe-TgFailLogPath($p) {
+  # Avoid backslash escaping issues in chat clients; prefer repo-relative forward-slash path.
+  if (-not $p) { return $null }
+  $s = [string]$p
+  $s = $s -replace '\\','/'
+  return $s
+}
+
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
 $cfgPath = Join-Path $PSScriptRoot 'e2e_always_on_config.json'
 $artDir = Join-Path $PSScriptRoot '_artifacts'
@@ -125,7 +133,8 @@ try {
       Send-Telegram $tgChannel $tgTarget ("E2E success; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; grants_count={6}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$j.workflow.grants_count)
     } else {
       $t1 = (Get-Date).ToString('s')
-      Send-Telegram $tgChannel $tgTarget ("E2E fail; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; fail_log={6}; error={7}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$j.fail_log,$j.error)
+      $fl = Safe-TgFailLogPath $j.fail_log
+      Send-Telegram $tgChannel $tgTarget ("E2E fail; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; fail_log={6}; error={7}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$fl,$j.error)
     }
   }
 

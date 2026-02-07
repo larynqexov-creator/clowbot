@@ -24,6 +24,9 @@ scripts/_artifacts/
 # e2e always-on local config
 scripts/e2e_always_on_config.json
 
+# local scratch/debug
+scripts/_local/
+
 # logs
 scripts/logs/
 

@@ -102,7 +102,9 @@ try {
     exit 1
   }
 
-  Tg $channel $target ("E2E fail; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; fail_log={6}; error={7}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$j.fail_log,$j.error)
+  $fl = $j.fail_log
+  if ($fl) { $fl = ([string]$fl) -replace '\\','/' }
+  Tg $channel $target ("E2E fail; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; fail_log={6}; error={7}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$fl,$j.error)
   exit 1
 } finally {
   Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue
