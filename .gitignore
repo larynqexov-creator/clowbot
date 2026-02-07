@@ -18,7 +18,8 @@ scripts/always_on/logs/
 scripts/always_on/*.lock
 scripts/always_on/*state*.json
 
-
+# e2e artifacts
+scripts/_artifacts/
 
 # tooling
 .DS_Store
