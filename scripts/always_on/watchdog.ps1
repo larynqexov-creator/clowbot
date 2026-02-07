@@ -81,21 +81,13 @@ function Test-GatewayTcp($h, $port) {
   }
 }
 
-function Test-GatewayHealthHttp($url, $timeoutMs) {
+function Get-GatewayHealthJson($timeoutMs) {
   try {
-    $handler = New-Object System.Net.Http.HttpClientHandler
-    $client = New-Object System.Net.Http.HttpClient($handler)
-    $client.Timeout = [TimeSpan]::FromMilliseconds($timeoutMs)
-    $resp = $client.GetAsync($url).GetAwaiter().GetResult()
-    if (-not $resp.IsSuccessStatusCode) { return $false }
-    $body = $resp.Content.ReadAsStringAsync().GetAwaiter().GetResult()
-    # Expect JSON like {"ok":true,...}
-    if ($body -match '"ok"\s*:\s*true') { return $true }
-    return $false
+    $raw = & clawdbot health --json --timeout $timeoutMs 2>$null
+    if (-not $raw) { return $null }
+    return ($raw | ConvertFrom-Json)
   } catch {
-    return $false
-  } finally {
-    if ($client) { $client.Dispose() }
+    return $null
   }
 }
 
@@ -113,14 +105,13 @@ function Get-GatewayPid() {
   }
 }
 
-function Test-TelegramConnected() {
+function Test-TelegramConnectedFromHealth($health) {
   try {
-    $raw = & clawdbot status --json 2>$null
-    if (-not $raw) { return $false }
-    $j = $raw | ConvertFrom-Json
-    # heuristic: channelSummary contains "Telegram" and not "error"
-    $txt = ($j.channelSummary | Out-String)
-    if ($txt -match 'Telegram' -and $txt -notmatch 'ERROR|Error|failed') { return $true }
+    if (-not $health) { return $false }
+    if (-not $health.channels) { return $false }
+    $tg = $health.channels.telegram
+    if (-not $tg) { return $false }
+    if ($tg.probe -and $tg.probe.ok -eq $true) { return $true }
     return $false
   } catch {
     return $false
@@ -201,16 +192,17 @@ With-Lock $LockPath {
   $st = Read-State
 
   $tcpOk = Test-GatewayTcp $GatewayHost $GatewayPort
-  $httpOk = $false
-  if ($tcpOk) {
-    $httpOk = Test-GatewayHealthHttp $HealthUrl $HttpTimeoutMs
-  }
+  $health = $null
+  $healthOk = $false
   $tgOk = $false
-  if ($tcpOk -and $httpOk) {
-    $tgOk = Test-TelegramConnected
+
+  if ($tcpOk) {
+    $health = Get-GatewayHealthJson $HttpTimeoutMs
+    if ($health -and $health.ok -eq $true) { $healthOk = $true }
+    $tgOk = Test-TelegramConnectedFromHealth $health
   }
 
-  $ok = ($tcpOk -and $httpOk -and $tgOk)
+  $ok = ($tcpOk -and $healthOk -and $tgOk)
 
   if ($ok) {
     if ($st.failures -ne 0) {
