@@ -24,5 +24,8 @@ scripts/_artifacts/
 # e2e always-on local config
 scripts/e2e_always_on_config.json
 
+# logs
+scripts/logs/
+
 # tooling
 .DS_Store
