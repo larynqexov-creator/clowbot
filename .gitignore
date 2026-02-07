@@ -14,6 +14,10 @@ __pycache__/
 
 # always-on local config
 scripts/always_on/always_on_config.json
+scripts/always_on/logs/
+scripts/always_on/*.lock
+scripts/always_on/*state*.json
+
 
 
 # tooling
