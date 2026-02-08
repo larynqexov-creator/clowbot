@@ -245,7 +245,7 @@ try {
       exit 0
     }
 
-    # FAIL: reason + fail_log (single-line TG message)
+    # FAIL: include gw_diag + lock files + rpc_error_short (mobile-first)
     $reason = 'unknown'
     if (-not $gwOk) { $reason = 'gw_not_ready' }
     elseif (-not $health) { $reason = 'health_unreachable' }
@@ -259,15 +259,37 @@ try {
         ("time={0}" -f $t1),
         ("reason={0}" -f $reason),
         ("gw_ok={0} gw_pid={1} gw_port={2}" -f $gwOk, $gwPid, $gwPort),
+        ("rpc_error_short={0}" -f $rpcErrShort),
         ("health_ok={0}" -f $healthOk),
         ("deps_pg={0} deps_r={1} deps_q={2} deps_m={3}" -f $depsPg, $depsR, $depsQ, $depsM),
+        ("task_last_run={0} task_last_result={1} audit_ok={2}" -f $taskLastRun,$taskLastResult,$auditOk),
+        'lock_files:',
+        ($lockLines -join "`n"),
         ("smoke_last: {0}" -f (Summarize-Last $smoke $smokeTime)),
         ("e2e_last:   {0}" -f (Summarize-Last $e2e $e2eTime))
       ) -join "`n"
       $details | Set-Content -LiteralPath $fail -Encoding UTF8
     } catch {}
 
-    Tg $channel $target ("STATUS FAIL: {0} fail_log={1}" -f $reason, (SafePath $fail))
+    $msg = @(
+      'STATUS FAIL',
+      ("time: {0}" -f $t1),
+      ("reason: {0}" -f $reason),
+      ("gw: ok={0} pid={1} port={2}" -f $gwOk, $gwPid, $gwPort),
+      ("api: health_ok={0}" -f $healthOk),
+      ("deps: pg={0} r={1} q={2} m={3}" -f $depsPg, $depsR, $depsQ, $depsM),
+      ("gw_diag: task_last_run={0} task_last_result={1} audit_ok={2}" -f $taskLastRun,$taskLastResult,$auditOk),
+      ("fail_log: {0}" -f (SafePath $fail))
+    )
+    if ($lockLines.Count -gt 0) {
+      $msg += 'lock_files:'
+      $msg += $lockLines
+    }
+    if ($rpcErrShort) {
+      $msg += ("rpc_error_short={0}" -f $rpcErrShort)
+    }
+
+    Tg $channel $target ($msg -join "`n")
     exit 1
   } finally {
     Pop-Location -ErrorAction SilentlyContinue
