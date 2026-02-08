@@ -30,5 +30,7 @@ scripts/_local/
 # logs
 scripts/logs/
 
+# local cmd/config already ignored; keep artifacts ignored too
+
 # tooling
 .DS_Store
