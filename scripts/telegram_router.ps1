@@ -3,9 +3,9 @@ Telegram inbound router for ClowBot ops.
 - Polls Telegram getUpdates using the bot token from ~/.clawdbot/clawdbot.json
 - Accepts ONLY:
     chat.id == TelegramTarget (from scripts/e2e_always_on_config.json)
-    text exactly 'e2e'
-- Rate limit: once per 10 minutes
+    text command in: status|smoke|e2e|help|menu|?
 - Lock: prevents parallel runs
+- Per-command rate-limit/locks are handled by scripts/*_on_demand.ps1
 Artifacts:
   scripts/_artifacts/telegram_router_state.json
   scripts/_artifacts/telegram_router.lock
@@ -53,6 +53,15 @@ $statePath = Join-Path $artDir 'telegram_router_state.json'
 $lockPath = Join-Path $artDir 'telegram_router.lock'
 $e2eLastPath = Join-Path $artDir 'e2e_last.json'
 
+$handlers = @{
+  'status' = (Join-Path $PSScriptRoot 'status_on_demand.ps1')
+  'smoke'  = (Join-Path $PSScriptRoot 'smoke_on_demand.ps1')
+  'e2e'    = (Join-Path $PSScriptRoot 'e2e_on_demand.ps1')
+  'help'   = (Join-Path $PSScriptRoot 'help_on_demand.ps1')
+  'menu'   = (Join-Path $PSScriptRoot 'help_on_demand.ps1')
+  '?'      = (Join-Path $PSScriptRoot 'help_on_demand.ps1')
+}
+
 if (-not (Test-Path -LiteralPath $cfgPath)) {
   throw "Missing config: $cfgPath"
 }
@@ -98,43 +107,28 @@ try {
     $text = [string]$m.text
 
     if ($chatId -ne $tgTarget) { continue }
-    if ($text -ne 'e2e') { continue }
 
-    $nowUnix = [int][DateTimeOffset]::Now.ToUnixTimeSeconds()
-    $elapsed = $nowUnix - [int]$state.last_run_unix
-    if ($elapsed -lt 600) {
-      $wait = 600 - $elapsed
-      Send-Telegram $tgChannel $tgTarget ("E2E rate-limited; try again in {0}s" -f $wait)
+    $cmd = ''
+    try {
+      $cmd = ([string]$text).Trim()
+      if ($cmd.StartsWith('/')) { $cmd = $cmd.Substring(1) }
+      $cmd = $cmd.ToLowerInvariant()
+    } catch {}
+
+    if (-not $handlers.ContainsKey($cmd)) { continue }
+
+    $script = [string]$handlers[$cmd]
+    if (-not (Test-Path -LiteralPath $script)) {
+      Send-Telegram $tgChannel $tgTarget ("Unknown handler for '{0}'" -f $cmd)
       continue
     }
 
-    $state.last_run_unix = $nowUnix
-    Save-Json $statePath $state
-
-    $t0 = (Get-Date).ToString('s')
-    Send-Telegram $tgChannel $tgTarget "E2E start; time=$t0"
-
+    # Run the appropriate on-demand script; it sends its own TG messages (locks/rate-limits inside).
     Push-Location $repo
     try {
-      $e2e = Join-Path $repo 'scripts\e2e.ps1'
-      $null = & powershell -NoProfile -ExecutionPolicy Bypass -File $e2e
+      $null = & powershell -NoProfile -ExecutionPolicy Bypass -File $script
     } finally {
       Pop-Location -ErrorAction SilentlyContinue
-    }
-
-    $j = Load-JsonOrNull $e2eLastPath
-    if (-not $j) {
-      Send-Telegram $tgChannel $tgTarget "E2E fail; time=$((Get-Date).ToString('s')); reason=e2e_last_missing"
-      continue
-    }
-
-    if ($j.ok -eq $true) {
-      $t1 = (Get-Date).ToString('s')
-      Send-Telegram $tgChannel $tgTarget ("E2E success; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; grants_count={6}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$j.workflow.grants_count)
-    } else {
-      $t1 = (Get-Date).ToString('s')
-      $fl = Safe-TgFailLogPath $j.fail_log
-      Send-Telegram $tgChannel $tgTarget ("E2E fail; time={0}; duration_ms={1}; health_ok={2}; wf={3}; status={4}/{5}; fail_log={6}; error={7}" -f $t1,$j.duration_ms,$j.health.ok,$j.workflow.wf_id,$j.workflow.final_status,$j.workflow.final_state,$fl,$j.error)
     }
   }
 

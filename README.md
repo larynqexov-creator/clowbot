@@ -60,6 +60,34 @@ Invoke-RestMethod -Method Get -Uri ("http://localhost:8000/science/grants/workfl
   -Headers @{ 'X-Tenant-Id'=$tenantId; 'X-User-Id'='seed-user' }
 ```
 
+## Telegram ops (commands)
+The bot listens only in `TelegramTarget` (see `scripts/e2e_always_on_config.json`).
+
+Commands:
+- `help` / `menu` / `?` → short menu
+- `status` → mobile-first multi-line status (gateway + API health + deps + last smoke/e2e)
+- `smoke` → quick workflow run (fast signal)
+- `e2e` → full end-to-end run (slower, heavier)
+
+### smoke vs e2e
+- **smoke**: quick “is it alive?” check.
+- **e2e**: full pipeline; rate-limited and locked to avoid parallel runs.
+
+### Artifacts / logs
+- `scripts/_artifacts/`
+  - `status_state.json`, `status_fail_*.log`
+  - `smoke_on_demand_state.json`, `smoke_on_demand.lock`, `smoke_last.json`, `smoke_fail_*.log`
+  - `e2e_on_demand_state.json`, `e2e_on_demand.lock`, `e2e_last.json`, `e2e_fail_*.log`
+  - `help_state.json`, `help.lock`
+- `scripts/logs/`
+  - `gateway_startup.log`, `smoke_startup.log`, `telegram_router.log`, ...
+
+### Scheduled Tasks (Windows)
+Created by scripts:
+- `Clawdbot Gateway Startup` → `scripts/gateway_startup.log.cmd` (ONSTART)
+- `Clowbot Smoke Startup` → `scripts/smoke_startup_wrapper.cmd` (ONSTART; 180s delay)
+- `Clowbot E2E Nightly` → `scripts/e2e_always_on.ps1` (repeats every ~6h)
+
 ## Notes / anti-footguns
 - Qdrant/MinIO ports are **not published to host** to avoid port collisions (they are reachable from other containers via service names).
 - `deps_ready` gate waits for Postgres/Redis and then probes Qdrant/MinIO before starting API/worker (reduces race/flakiness).

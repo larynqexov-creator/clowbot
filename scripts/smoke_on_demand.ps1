@@ -47,6 +47,7 @@ $cfgPath = Join-Path $PSScriptRoot 'e2e_always_on_config.json'
 $artDir = Join-Path $PSScriptRoot '_artifacts'
 $statePath = Join-Path $artDir 'smoke_on_demand_state.json'
 $lockPath = Join-Path $artDir 'smoke_on_demand.lock'
+$e2eLock = Join-Path $artDir 'e2e_on_demand.lock'
 $lastPath = Join-Path $artDir 'smoke_last.json'
 
 if (-not (Test-Path -LiteralPath $cfgPath)) {
@@ -65,6 +66,8 @@ try {
 }
 
 try {
+  if (Test-Path -LiteralPath $e2eLock) { Tg $channel $target "SMOKE busy: e2e running"; exit 0 }
+
   $state = Load-JsonOrDefault $statePath ([pscustomobject]@{ last_run_unix = 0 })
   $nowUnix = [int][DateTimeOffset]::Now.ToUnixTimeSeconds()
   $elapsed = $nowUnix - [int]$state.last_run_unix
