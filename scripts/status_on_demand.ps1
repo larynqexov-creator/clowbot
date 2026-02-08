@@ -177,6 +177,50 @@ try {
     $healthOk = $null
     try { $healthOk = [bool]$health.ok } catch {}
 
+    # gw_diag: task last run/result + audit ok + lock files + rpc error short
+    $taskLastRun = $null
+    $taskLastResult = $null
+    try {
+      $info = Get-ScheduledTaskInfo -TaskName 'Clawdbot Gateway' -ErrorAction Stop
+      $taskLastRun = $info.LastRunTime.ToString('s')
+      $taskLastResult = [string]$info.LastTaskResult
+    } catch {
+      # fallback: leave nulls
+    }
+
+    $auditOk = $null
+    try { $auditOk = [bool]$gw.service.configAudit.ok } catch {}
+
+    $lockRoots = @(
+      (Join-Path $env:LOCALAPPDATA 'Temp\\clawdbot'),
+      (Join-Path $env:TEMP 'clawdbot'),
+      (Join-Path $env:USERPROFILE '.clawdbot')
+    )
+    $lockFiles = @()
+    foreach ($r in $lockRoots) {
+      try {
+        if (Test-Path -LiteralPath $r) {
+          $lockFiles += Get-ChildItem -LiteralPath $r -File -ErrorAction SilentlyContinue | Where-Object { $_.Name -like 'gateway*.lock' -or $_.Name -like 'gateway*.pid' }
+        }
+      } catch {}
+    }
+    $lockLines = @()
+    foreach ($f in ($lockFiles | Sort-Object LastWriteTime -Descending | Select-Object -First 5)) {
+      $lockLines += (SafePath $f.FullName)
+    }
+
+    $rpcErrShort = $null
+    try {
+      if (-not $gwOk) {
+        $e = [string]$gw.rpc.error
+        if ($e) {
+          $e = ($e -replace "\s+", ' ').Trim()
+          if ($e.Length -gt 120) { $e = $e.Substring(0,120) }
+          $rpcErrShort = $e
+        }
+      }
+    } catch {}
+
     if ($gwOk -and $health -and $healthOk -eq $true) {
       $msg = @(
         'STATUS OK',
@@ -185,10 +229,19 @@ try {
         ("api: health_ok={0}" -f $healthOk),
         ("deps: pg={0} r={1} q={2} m={3}" -f $depsPg, $depsR, $depsQ, $depsM),
         ("last_smoke: {0}" -f (Summarize-Last $smoke $smokeTime)),
-        ("last_e2e:   {0}" -f (Summarize-Last $e2e $e2eTime))
-      ) -join "`n"
+        ("last_e2e:   {0}" -f (Summarize-Last $e2e $e2eTime)),
+        ("gw_diag: task_last_run={0} task_last_result={1} audit_ok={2}" -f $taskLastRun,$taskLastResult,$auditOk)
+      )
 
-      Tg $channel $target $msg
+      if ($lockLines.Count -gt 0) {
+        $msg += 'lock_files:'
+        $msg += $lockLines
+      }
+      if ($rpcErrShort) {
+        $msg += ("rpc_error_short={0}" -f $rpcErrShort)
+      }
+
+      Tg $channel $target ($msg -join "`n")
       exit 0
     }
 
