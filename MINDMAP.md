@@ -1,28 +1,68 @@
-# MINDMAP (Dev)
+# MINDMAP
+
+Эта карта должна быть “читаемой глазами”: цели → ветки → что готово/что дальше.
+
+Легенда:
+- ✅ DONE
+- 🟡 DOING
+- ⬜ TODO
 
 ```mermaid
-flowchart TD
-  A[Clowbot]:::doing
+mindmap
+  root((Clowbot / JARVIS MODE))
 
-  A --> B[MVP baseline]:::doing
-  B --> B1[Docker Compose: api/worker/postgres/redis/qdrant/minio]:::done
-  B --> B2[Science grants workflow (mock)]:::done
-  B --> B3[Health endpoint]:::done
+    ✅ MVP baseline
+      ✅ Docker Compose (api/worker/postgres/redis/qdrant/minio)
+      ✅ Health endpoint
+      ✅ Science grants workflow (mock)
 
-  A --> J[Jarvis execution layer]:::doing
-  J --> J1[Mindmap overview endpoint]:::done
-  J --> J2[Custom Mindmaps endpoints]:::done
-  J --> J3[Approvals Queue: pending_actions + approve/reject API]:::done
-  J --> J4[Outbox: outbox_messages + list API]:::done
-  J --> J5[ToolRegistry v1 (stub + audit)]:::done
-  J --> J6[Worker execution for APPROVED actions]:::done
-  J --> J7[Outbox Dispatcher (stub)]:::done
-  J --> J8[Outbox Contract v1 + Preview Pack]:::done
-  J --> J9[Skill Runner v0 (submit_article_package)]:::done
-  J --> J10[Portfolio Manager (PORTFOLIO.md + weekly review)]:::todo
-  J --> J11[Skill: sales_outreach_sequence (runner)]:::todo
+    ✅ Jarvis execution layer
+      ✅ Mindmap endpoints
+        ✅ /mindmap/overview
+        ✅ /mindmap/custom (save/latest)
 
-  classDef done fill:#b7f7c5,stroke:#1f7a2e,color:#000;
-  classDef doing fill:#ffe8a3,stroke:#8a6d00,color:#000;
-  classDef todo fill:#e6e6e6,stroke:#666,color:#000;
+      ✅ Approvals
+        ✅ pending_actions table
+        ✅ /actions/pending
+        ✅ /actions/{id}/approve
+        ✅ /actions/{id}/reject
+
+      ✅ Outbox
+        ✅ outbox_messages table
+        ✅ /outbox list
+        ✅ Outbox dispatcher (stub → preview)
+        ✅ Telegram adapter (real send if allowlisted)
+
+      ✅ ToolRegistry (stub)
+        ✅ GREEN/YELLOW/RED enforcement
+        ✅ audit_log (TOOL_CALL/TOOL_RESULT)
+        ✅ action: telegram.send_message (default chat)
+        ✅ action: outbox.send (approval gate)
+
+      ✅ Outbox Contract v1
+        ✅ Pydantic schemas + exported JSON Schema
+        ✅ Idempotency key + uniqueness (tenant_id, idempotency_key)
+        ✅ Allowlist enforcement (auto-upgrade to RED+approval)
+
+      ✅ Preview Pack v1
+        ✅ Preview Document (outbox_preview)
+        ✅ Raw preview artifacts (MinIO best-effort)
+
+      ✅ Skill Runner v0
+        ✅ /skills/run
+        ✅ Skill: submit_article_package
+          ✅ creates cover letter + checklist
+          ✅ creates outbox email payload
+          ✅ creates pending_action outbox.send
+          ✅ BLOCKED if missing inputs (creates tasks)
+
+    ⬜ Next (Roadmap)
+      ⬜ /tasks/{id}/run_skill (TaskType binding)
+      ⬜ Allowlist as document in DB (policy_allowlist)
+      ⬜ Skill: sales_outreach_sequence (runner)
+      ⬜ Dispatcher locking: FOR UPDATE SKIP LOCKED
+
+    ⬜ Portfolio Manager
+      ⬜ Weekly review skill
+      ⬜ Active set 3–7 + scoring
 ```
