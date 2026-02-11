@@ -12,7 +12,7 @@
 - [x] Mindmap overview endpoint
 
 ## Следующие шаги (конкретно)
-1) Закончить Outbox Contract v1: миграция 0003 + запись payload/idempotency_key в outbox_messages.
-2) Завершить Preview Pack: запись raw preview artifacts в MinIO + object_keys в meta.preview.
-3) Skill Runner v0: расширить submit_article_package (manuscript_doc_id support + attachments) + добавить /tasks/{id}/run_skill (binding).
-4) Добавить allowlist document (doc_type=policy_allowlist) вместо env-only.
+1) Добавить endpoint `POST /tasks/{id}/run_skill` (binding TaskType → skill) + хранение TaskType в tasks.meta.
+2) Добавить allowlist document (doc_type=policy_allowlist) вместо env-only.
+3) Реализовать второй runnable skill: `sales_outreach_sequence` (создаёт 3–5 outbox telegram/email сообщений).
+4) Улучшить идемпотентность dispatcher на Postgres: `FOR UPDATE SKIP LOCKED`.
