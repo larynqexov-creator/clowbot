@@ -43,6 +43,13 @@ curl.exe -sS -X POST http://localhost:8000/mindmap/custom `
 curl.exe -sS http://localhost:8000/mindmap/custom/latest -H "X-Tenant-Id: <tenant_id>" -H "X-User-Id: seed-user"
 ```
 
+## Mindmap UI (как в Mind Elixir)
+В репозитории есть визуальная mindmap-страница (viewer):
+- `docs/mindmap/index.html`
+- `docs/mindmap/mindmap.json`
+
+Открыть локально можно просто файлом (или через любой статический сервер). Для GitHub Pages можно будет включить позже.
+
 ## Telegram (optional integration for Outbox)
 Outbox dispatcher can **really send** messages when `channel=telegram`, if env vars are set:
 - `TELEGRAM_BOT_TOKEN` (from @BotFather)

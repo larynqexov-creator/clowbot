@@ -1,0 +1,89 @@
+{
+  "nodeData": {
+    "id": "root",
+    "topic": "Clowbot / JARVIS MODE",
+    "expanded": true,
+    "children": [
+      {
+        "id": "mvp",
+        "topic": "✅ MVP baseline",
+        "expanded": true,
+        "children": [
+          {"id": "mvp-compose", "topic": "✅ Docker Compose (api/worker/postgres/redis/qdrant/minio)"},
+          {"id": "mvp-health", "topic": "✅ Health endpoint"},
+          {"id": "mvp-grants", "topic": "✅ Science grants workflow (mock)"}
+        ]
+      },
+      {
+        "id": "jarvis",
+        "topic": "✅ Jarvis execution layer",
+        "expanded": true,
+        "children": [
+          {
+            "id": "mindmap",
+            "topic": "✅ Mindmap endpoints",
+            "children": [
+              {"id": "mm-overview", "topic": "✅ /mindmap/overview"},
+              {"id": "mm-custom", "topic": "✅ /mindmap/custom (save/latest)"}
+            ]
+          },
+          {
+            "id": "approvals",
+            "topic": "✅ Approvals",
+            "children": [
+              {"id": "pa-table", "topic": "✅ pending_actions table"},
+              {"id": "pa-api", "topic": "✅ /actions pending+approve+reject"}
+            ]
+          },
+          {
+            "id": "outbox",
+            "topic": "✅ Outbox",
+            "children": [
+              {"id": "ob-table", "topic": "✅ outbox_messages table"},
+              {"id": "ob-api", "topic": "✅ /outbox list"},
+              {"id": "ob-dispatch", "topic": "✅ dispatcher + preview pack"},
+              {"id": "ob-tg", "topic": "✅ Telegram adapter (реальная отправка по allowlist)"}
+            ]
+          },
+          {
+            "id": "toolreg",
+            "topic": "✅ ToolRegistry (stub)",
+            "children": [
+              {"id": "tr-risk", "topic": "✅ GREEN/YELLOW/RED + audit"},
+              {"id": "tr-tg", "topic": "✅ telegram.send_message (дефолтный чат)"},
+              {"id": "tr-outbox-send", "topic": "✅ outbox.send (approval gate)"}
+            ]
+          },
+          {
+            "id": "contract",
+            "topic": "✅ Outbox Contract v1",
+            "children": [
+              {"id": "schema", "topic": "✅ Pydantic schema + JSON schema export"},
+              {"id": "idem", "topic": "✅ Idempotency key + unique constraint"},
+              {"id": "allow", "topic": "✅ Allowlist enforcement (auto RED+approval)"}
+            ]
+          },
+          {
+            "id": "skills",
+            "topic": "✅ Skill Runner v0",
+            "children": [
+              {"id": "skills-api", "topic": "✅ /skills/run"},
+              {"id": "skill-article", "topic": "✅ submit_article_package (делает пакет + outbox + pending_action)"}
+            ]
+          }
+        ]
+      },
+      {
+        "id": "roadmap",
+        "topic": "⬜ План / Next",
+        "expanded": true,
+        "children": [
+          {"id": "todo-task-run", "topic": "⬜ /tasks/{id}/run_skill (binding TaskType → skill)"},
+          {"id": "todo-allowlist-doc", "topic": "⬜ Allowlist как документ в БД (policy_allowlist)"},
+          {"id": "todo-sales", "topic": "⬜ Skill: sales_outreach_sequence (runner)"},
+          {"id": "todo-locking", "topic": "⬜ Dispatcher locking: FOR UPDATE SKIP LOCKED"}
+        ]
+      }
+    ]
+  }
+}

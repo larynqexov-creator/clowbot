@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Clowbot — Mindmap</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/mind-elixir/dist/style.css" />
+    <style>
+      html, body { height: 100%; margin: 0; }
+      #app {
+        height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        background: #0b0f19;
+      }
+      header {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 12px;
+        color: #e5e7eb;
+        background: #0f172a;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      }
+      header a { color: #93c5fd; text-decoration: none; }
+      #map { height: 100%; width: 100%; background: #0b0f19; }
+      .hint { opacity: 0.8; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <strong>Clowbot — Mindmap</strong>
+        <span class="hint">(Mind Elixir)</span>
+        <span style="flex:1"></span>
+        <a href="../../MINDMAP.md" target="_blank" rel="noreferrer">MINDMAP.md</a>
+        <a href="./mindmap.json" target="_blank" rel="noreferrer">mindmap.json</a>
+      </header>
+      <div id="map"></div>
+    </div>
+
+    <script type="module">
+      import MindElixir from 'https://cdn.jsdelivr.net/npm/mind-elixir/dist/MindElixir.js'
+
+      const options = {
+        el: '#map',
+        direction: MindElixir.RIGHT,
+        toolBar: true,
+        nodeMenu: true,
+        keypress: true,
+        locale: 'ru',
+        overflowHidden: false,
+        mainLinkStyle: 2,
+      }
+
+      const mind = new MindElixir(options)
+
+      const resp = await fetch('./mindmap.json', { cache: 'no-store' })
+      const data = await resp.json()
+      mind.init(data)
+
+      // Read-only by default (this page is a viewer).
+      // You can enable editing later if needed.
+    </script>
+  </body>
+</html>
