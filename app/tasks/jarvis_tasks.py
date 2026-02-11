@@ -3,8 +3,10 @@ from __future__ import annotations
 import logging
 
 from app.core.celery_app import celery
+from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.tool_registry import ConfirmationRequired, execute_pending_action
+from app.integrations.telegram import TelegramSendError, send_message
 from app.models.tables import Document, OutboxMessage, PendingAction
 from app.util.ids import new_uuid
 from app.util.time import now_utc
@@ -153,18 +155,47 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
 
                 m.meta = dict(m.meta or {})
                 m.meta["preview_document_id"] = preview_doc.id
-                m.status = "STUB_SENT"
-                m.sent_at = now_utc()
 
-                _audit(
-                    db,
-                    tenant_id=m.tenant_id,
-                    user_id=m.user_id,
-                    event_type="OUTBOX_STUB_SENT",
-                    severity="INFO",
-                    message="stub_sent",
-                    context={"outbox_id": m.id, "preview_document_id": preview_doc.id},
-                )
+                # Optional Telegram real send (only if token set AND target allowlisted).
+                if m.channel == "telegram" and settings.TELEGRAM_BOT_TOKEN:
+                    allow = {x.strip() for x in (settings.TELEGRAM_ALLOWLIST_CHATS or "").split(",") if x.strip()}
+                    if m.to not in allow:
+                        raise TelegramSendError(f"Telegram chat not allowlisted: {m.to}")
+
+                    resp = send_message(
+                        token=settings.TELEGRAM_BOT_TOKEN,
+                        chat_id=m.to,
+                        text=m.body,
+                        parse_mode="Markdown",
+                        disable_preview=True,
+                    )
+
+                    m.status = "SENT"
+                    m.sent_at = now_utc()
+                    m.meta["telegram_result"] = {"message_id": resp.get("result", {}).get("message_id")}
+
+                    _audit(
+                        db,
+                        tenant_id=m.tenant_id,
+                        user_id=m.user_id,
+                        event_type="OUTBOX_SENT",
+                        severity="INFO",
+                        message="telegram_sent",
+                        context={"outbox_id": m.id, "preview_document_id": preview_doc.id},
+                    )
+                else:
+                    m.status = "STUB_SENT"
+                    m.sent_at = now_utc()
+
+                    _audit(
+                        db,
+                        tenant_id=m.tenant_id,
+                        user_id=m.user_id,
+                        event_type="OUTBOX_STUB_SENT",
+                        severity="INFO",
+                        message="stub_sent",
+                        context={"outbox_id": m.id, "preview_document_id": preview_doc.id},
+                    )
 
                 db.commit()
                 stub_sent += 1

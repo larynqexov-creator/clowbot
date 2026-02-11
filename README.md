@@ -43,6 +43,13 @@ curl.exe -sS -X POST http://localhost:8000/mindmap/custom `
 curl.exe -sS http://localhost:8000/mindmap/custom/latest -H "X-Tenant-Id: <tenant_id>" -H "X-User-Id: seed-user"
 ```
 
+## Telegram (optional integration for Outbox)
+Outbox dispatcher can **really send** messages when `channel=telegram`, if env vars are set:
+- `TELEGRAM_BOT_TOKEN` (from @BotFather)
+- `TELEGRAM_ALLOWLIST_CHATS` (comma-separated: `@channel,123456789`)
+
+Without these, dispatcher stays in STUB mode and marks messages as `STUB_SENT`.
+
 ## Create tenant + run workflow
 Option 1 (recommended): run the script:
 ```powershell

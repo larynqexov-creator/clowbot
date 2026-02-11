@@ -30,6 +30,11 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "clowbot"
     MINIO_SECURE: bool = False
 
+    # Optional integrations (STUB by default)
+    TELEGRAM_BOT_TOKEN: str | None = None
+    # Comma-separated allowlist of chat ids/usernames (e.g. "@mychannel,123456789")
+    TELEGRAM_ALLOWLIST_CHATS: str = ""
+
     class Config:
         env_file = ".env"
         extra = "ignore"
