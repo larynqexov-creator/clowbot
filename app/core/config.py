@@ -34,6 +34,8 @@ class Settings(BaseSettings):
     TELEGRAM_BOT_TOKEN: str | None = None
     # Comma-separated allowlist of chat ids/usernames (e.g. "@mychannel,123456789")
     TELEGRAM_ALLOWLIST_CHATS: str = ""
+    # Default chat id/username used when ToolRegistry is asked to send Telegram without explicit target.
+    TELEGRAM_DEFAULT_CHAT: str = "95576236"
 
     class Config:
         env_file = ".env"

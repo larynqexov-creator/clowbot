@@ -89,12 +89,23 @@ def execute_pending_action(db: Session, *, action: PendingAction) -> ToolResult:
         )
         return ToolResult(ok=True, status="DONE")
 
-    # For now anything that would be an external side-effect is routed to Outbox.
-    # Expected payload keys (soft): channel/to/subject/body
-    channel = (action.payload or {}).get("channel") or "stub"
-    to = (action.payload or {}).get("to") or "(unspecified)"
-    subject = (action.payload or {}).get("subject")
-    body = (action.payload or {}).get("body") or (action.payload or {}).get("message") or str(action.payload)
+    # Convenience action: telegram.send_message
+    if action.action_type in {"telegram.send_message", "telegram.send"}:
+        from app.core.config import settings
+
+        channel = "telegram"
+        to = (action.payload or {}).get("to") or settings.TELEGRAM_DEFAULT_CHAT
+        subject = None
+        body = (action.payload or {}).get("text") or (action.payload or {}).get("body") or (action.payload or {}).get("message")
+        if not body:
+            body = str(action.payload)
+    else:
+        # For now anything that would be an external side-effect is routed to Outbox.
+        # Expected payload keys (soft): channel/to/subject/body
+        channel = (action.payload or {}).get("channel") or "stub"
+        to = (action.payload or {}).get("to") or "(unspecified)"
+        subject = (action.payload or {}).get("subject")
+        body = (action.payload or {}).get("body") or (action.payload or {}).get("message") or str(action.payload)
 
     outbox = OutboxMessage(
         id=new_uuid(),
