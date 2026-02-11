@@ -12,7 +12,8 @@
 - [x] Mindmap overview endpoint
 
 ## Следующие шаги (конкретно)
-1) Добавить минимальный worker-loop: обработка `pending_actions` со статусом APPROVED → DONE/FAILED (пока stub ToolRegistry).
-2) Добавить первичную структуру Skill Library (`skills/`) + 1 пример skill card.
-3) Добавить PORTFOLIO.md (шаблон таблицы на 50 проектов) + weekly-review шаблон.
-4) Протянуть Memory Notes + Search API (если этого ещё нет в коде репо).
+1) ToolRegistry v1 (STUB): enforcement GREEN/YELLOW/RED + audit_log на каждый TOOL_CALL/TOOL_RESULT.
+2) Worker executor: Celery task `process_pending_actions` (APPROVED → ToolRegistry → DONE/FAILED).
+3) Outbox dispatcher (STUB): отдельная таска на будущее (пока только QUEUED список).
+4) Добавить `skills/` + первые skill cards.
+5) Weekly review шаблон + поддержка портфеля (PORTFOLIO.md уже добавлен).

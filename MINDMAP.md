@@ -12,9 +12,10 @@ flowchart TD
   A --> J[Jarvis execution layer]:::doing
   J --> J1[Mindmap overview endpoint]:::done
   J --> J2[Custom Mindmaps endpoints]:::done
-  J --> J3[Approvals Queue: pending_actions + approve/reject API]:::doing
-  J --> J4[Outbox: outbox_messages + list API]:::doing
-  J --> J5[Worker execution for APPROVED actions]:::todo
+  J --> J3[Approvals Queue: pending_actions + approve/reject API]:::done
+  J --> J4[Outbox: outbox_messages + list API]:::done
+  J --> J5[ToolRegistry v1 (stub + audit)]:::doing
+  J --> J6[Worker execution for APPROVED actions]:::doing
   J --> J6[Skill Library (playbooks)]:::todo
   J --> J7[Portfolio Manager (PORTFOLIO.md + weekly review)]:::todo
 
