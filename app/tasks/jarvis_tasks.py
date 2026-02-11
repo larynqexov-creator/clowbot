@@ -112,6 +112,7 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
             .all()
         )
 
+        sent = 0
         stub_sent = 0
         failed = 0
 
@@ -183,6 +184,9 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                         message="telegram_sent",
                         context={"outbox_id": m.id, "preview_document_id": preview_doc.id},
                     )
+
+                    db.commit()
+                    sent += 1
                 else:
                     m.status = "STUB_SENT"
                     m.sent_at = now_utc()
@@ -197,8 +201,8 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                         context={"outbox_id": m.id, "preview_document_id": preview_doc.id},
                     )
 
-                db.commit()
-                stub_sent += 1
+                    db.commit()
+                    stub_sent += 1
             except Exception as e:
                 db.rollback()
                 try:
@@ -219,6 +223,6 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                     db.rollback()
                 failed += 1
 
-        return {"ok": True, "stub_sent": stub_sent, "failed": failed}
+        return {"ok": True, "sent": sent, "stub_sent": stub_sent, "failed": failed}
     finally:
         db.close()
