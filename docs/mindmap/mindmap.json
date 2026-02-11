@@ -81,7 +81,16 @@
           {"id": "todo-task-run", "topic": "⬜ /tasks/{id}/run_skill (binding TaskType → skill)"},
           {"id": "todo-allowlist-doc", "topic": "⬜ Allowlist как документ в БД (policy_allowlist)"},
           {"id": "todo-sales", "topic": "⬜ Skill: sales_outreach_sequence (runner)"},
-          {"id": "todo-locking", "topic": "⬜ Dispatcher locking: FOR UPDATE SKIP LOCKED"}
+          {"id": "todo-locking", "topic": "⬜ Dispatcher locking: FOR UPDATE SKIP LOCKED"},
+          {
+            "id": "todo-remote",
+            "topic": "⬜ Удалённое управление ПК / автозаполнение форм",
+            "children": [
+              {"id": "todo-remote-mode", "topic": "⬜ Выбор режима: управляемый браузер vs удалённый рабочий стол"},
+              {"id": "todo-remote-policy", "topic": "⬜ Политики: финальный Submit только по подтверждению"},
+              {"id": "todo-remote-skill", "topic": "⬜ Playbook/skill: fill_web_form_v1 (шаблон полей + лог шагов)"}
+            ]
+          }
         ]
       }
     ]
