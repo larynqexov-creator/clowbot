@@ -8,7 +8,10 @@ from fastapi import FastAPI
 from redis import Redis
 from sqlalchemy import text
 
+from app.api.routers.actions import router as actions_router
 from app.api.routers.admin import router as admin_router
+from app.api.routers.mindmap import router as mindmap_router
+from app.api.routers.outbox import router as outbox_router
 from app.api.routers.science_grants import router as science_grants_router
 from app.core.config import settings
 from app.core.db import engine
@@ -58,6 +61,11 @@ def _check_redis() -> bool:
 @app.on_event("startup")
 def _startup() -> None:
     # Do not crash API if deps are temporarily unavailable.
+    # In CI/unit tests we skip these to avoid slow retries/hangs.
+    if not settings.ENSURE_EXTERNAL_DEPS_ON_STARTUP:
+        log.info("Startup: ENSURE_EXTERNAL_DEPS_ON_STARTUP=false; skipping qdrant/minio ensure")
+        return
+
     _retry_backoff(lambda: ensure_qdrant_collection(), what="qdrant")
     _retry_backoff(lambda: ensure_minio_bucket(), what="minio")
 
@@ -75,3 +83,6 @@ def health() -> dict[str, Any]:
 
 app.include_router(admin_router, prefix="/admin", tags=["admin"])
 app.include_router(science_grants_router, prefix="/science/grants", tags=["science-grants"])
+app.include_router(mindmap_router, prefix="/mindmap", tags=["mindmap"])
+app.include_router(actions_router, prefix="/actions", tags=["actions"])
+app.include_router(outbox_router, prefix="/outbox", tags=["outbox"])

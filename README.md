@@ -30,6 +30,19 @@ curl.exe -sS http://localhost:8000/health
 ```
 Expected: `ok=true` and `deps.* = true`.
 
+## Mindmap (Jarvis layer)
+```powershell
+curl.exe -sS http://localhost:8000/mindmap/overview
+```
+Custom mindmaps (requires headers `X-Tenant-Id` + `X-User-Id`):
+```powershell
+curl.exe -sS -X POST http://localhost:8000/mindmap/custom `
+  -H "X-Tenant-Id: <tenant_id>" -H "X-User-Id: seed-user" -H "Content-Type: application/json" `
+  -d '{"title":"demo","mermaid":"flowchart TD\nA-->B"}'
+
+curl.exe -sS http://localhost:8000/mindmap/custom/latest -H "X-Tenant-Id: <tenant_id>" -H "X-User-Id: seed-user"
+```
+
 ## Create tenant + run workflow
 Option 1 (recommended): run the script:
 ```powershell

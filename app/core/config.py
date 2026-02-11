@@ -8,6 +8,9 @@ class Settings(BaseSettings):
     APP_ENV: str = "local"
     LOG_LEVEL: str = "INFO"
 
+    # In unit tests / CI we avoid long startup retries against external deps.
+    ENSURE_EXTERNAL_DEPS_ON_STARTUP: bool = True
+
     ADMIN_TOKEN: str = "change-me-admin-token"
     AUTH_DISABLED: bool = False
 
