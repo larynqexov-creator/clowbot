@@ -14,10 +14,11 @@ flowchart TD
   J --> J2[Custom Mindmaps endpoints]:::done
   J --> J3[Approvals Queue: pending_actions + approve/reject API]:::done
   J --> J4[Outbox: outbox_messages + list API]:::done
-  J --> J5[ToolRegistry v1 (stub + audit)]:::doing
-  J --> J6[Worker execution for APPROVED actions]:::doing
-  J --> J6[Skill Library (playbooks)]:::todo
-  J --> J7[Portfolio Manager (PORTFOLIO.md + weekly review)]:::todo
+  J --> J5[ToolRegistry v1 (stub + audit)]:::done
+  J --> J6[Worker execution for APPROVED actions]:::done
+  J --> J7[Outbox Dispatcher (stub)]:::done
+  J --> J8[Skills Library (playbooks)]:::doing
+  J --> J9[Portfolio Manager (PORTFOLIO.md + weekly review)]:::todo
 
   classDef done fill:#b7f7c5,stroke:#1f7a2e,color:#000;
   classDef doing fill:#ffe8a3,stroke:#8a6d00,color:#000;
