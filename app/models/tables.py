@@ -95,9 +95,14 @@ class OutboxMessage(Base):
     to: Mapped[str] = mapped_column(String(500), nullable=False)
     subject: Mapped[str | None] = mapped_column(String(500), nullable=True)
     body: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Canonical contract payload (validated JSON)
+    payload: Mapped[dict | None] = mapped_column(JSONType, nullable=True)
+    idempotency_key: Mapped[str | None] = mapped_column(String(120), nullable=True)
+
     meta: Mapped[dict] = mapped_column("metadata", JSONType, nullable=False, default=dict)
 
-    status: Mapped[str] = mapped_column(String(20), nullable=False)  # QUEUED/SENT/FAILED
+    status: Mapped[str] = mapped_column(String(20), nullable=False)  # QUEUED/SENDING/STUB_SENT/SENT/FAILED
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=False)
     sent_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=True)
 

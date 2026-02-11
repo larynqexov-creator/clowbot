@@ -43,11 +43,11 @@ def test_outbox_dispatcher_stub_sent_creates_preview(monkeypatch):
     with SessionLocal() as db:
         m = db.query(OutboxMessage).filter(OutboxMessage.id == msg_id).one()
         assert m.status == "STUB_SENT"
-        assert m.meta.get("preview_document_id")
+        assert m.meta.get("preview", {}).get("document_id")
 
-        doc = db.query(Document).filter(Document.id == m.meta["preview_document_id"]).one()
+        doc = db.query(Document).filter(Document.id == m.meta["preview"]["document_id"]).one()
         assert doc.doc_type == "outbox_preview"
-        assert "OUTBOX PREVIEW" in (doc.content_text or "")
+        assert "Outbox Preview" in (doc.content_text or "")
 
 
 def test_outbox_dispatcher_is_idempotent(monkeypatch):

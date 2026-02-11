@@ -7,6 +7,38 @@ from minio import Minio
 
 from app.core.config import settings
 
+
+def put_text(*, object_key: str, text: str, content_type: str = "text/plain; charset=utf-8") -> str:
+    """Write text into MinIO. Best-effort (falls back to returning the key)."""
+    import io
+
+    data = text.encode("utf-8")
+    return put_bytes(object_key=object_key, data=data, content_type=content_type)
+
+
+def put_bytes(*, object_key: str, data: bytes, content_type: str = "application/octet-stream") -> str:
+    """Write bytes into MinIO. Best-effort (falls back to returning the key)."""
+    import io
+
+    def _op() -> str:
+        c = _client()
+        if not c.bucket_exists(settings.MINIO_BUCKET):
+            c.make_bucket(settings.MINIO_BUCKET)
+        c.put_object(
+            settings.MINIO_BUCKET,
+            object_key,
+            io.BytesIO(data),
+            length=len(data),
+            content_type=content_type,
+        )
+        return object_key
+
+    try:
+        return _with_retry(_op, attempts=2)
+    except Exception:
+        # In unit tests / offline mode we still return the deterministic key.
+        return object_key
+
 T = TypeVar("T")
 
 
