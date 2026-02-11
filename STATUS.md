@@ -12,7 +12,7 @@
 - [x] Mindmap overview endpoint
 
 ## Следующие шаги (конкретно)
-1) Довести Skills Library до runnable: добавить (минимальный) skill-runner или хотя бы маппинг `TaskType -> skill`.
-2) Добавить weekly review skill + шаблон (портфель уже есть).
-3) Усилить идемпотентность dispatcher на Postgres (FOR UPDATE SKIP LOCKED) + статус SENDING.
-4) (Опционально) endpoint для получения preview outbox сообщения.
+1) Закончить Outbox Contract v1: миграция 0003 + запись payload/idempotency_key в outbox_messages.
+2) Завершить Preview Pack: запись raw preview artifacts в MinIO + object_keys в meta.preview.
+3) Skill Runner v0: расширить submit_article_package (manuscript_doc_id support + attachments) + добавить /tasks/{id}/run_skill (binding).
+4) Добавить allowlist document (doc_type=policy_allowlist) вместо env-only.

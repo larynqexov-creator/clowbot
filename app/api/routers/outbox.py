@@ -41,6 +41,9 @@ def list_outbox(ctx=Depends(get_ctx), db: Session = Depends(get_db)) -> dict:
                 "status": m.status,
                 "created_at": m.created_at,
                 "sent_at": m.sent_at,
+                "idempotency_key": m.idempotency_key,
+                "payload": m.payload,
+                "meta": m.meta,
             }
             for m in items
         ]

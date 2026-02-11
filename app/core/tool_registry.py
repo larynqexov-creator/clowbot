@@ -89,6 +89,32 @@ def execute_pending_action(db: Session, *, action: PendingAction) -> ToolResult:
         )
         return ToolResult(ok=True, status="DONE")
 
+    # Internal action: outbox.send (approve sending an existing outbox item)
+    if action.action_type in {"outbox.send", "send_outbox"}:
+        outbox_id = (action.payload or {}).get("outbox_id")
+        if not outbox_id:
+            return ToolResult(ok=False, status="FAILED", detail="Missing outbox_id")
+
+        m = db.query(OutboxMessage).filter(OutboxMessage.id == outbox_id, OutboxMessage.tenant_id == action.tenant_id).one_or_none()
+        if not m:
+            return ToolResult(ok=False, status="FAILED", detail="Outbox message not found")
+
+        m.meta = dict(m.meta or {})
+        m.meta["approved"] = True
+        db.commit()
+
+        _audit(
+            db,
+            tenant_id=action.tenant_id,
+            user_id=action.user_id,
+            event_type="OUTBOX_APPROVED",
+            severity="INFO",
+            message="outbox_send_approved",
+            context={"outbox_id": outbox_id},
+        )
+
+        return ToolResult(ok=True, status="DONE")
+
     # Convenience action: telegram.send_message
     if action.action_type in {"telegram.send_message", "telegram.send"}:
         from app.core.config import settings

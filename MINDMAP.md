@@ -17,8 +17,9 @@ flowchart TD
   J --> J5[ToolRegistry v1 (stub + audit)]:::done
   J --> J6[Worker execution for APPROVED actions]:::done
   J --> J7[Outbox Dispatcher (stub)]:::done
-  J --> J8[Skills Library (playbooks)]:::doing
-  J --> J9[Portfolio Manager (PORTFOLIO.md + weekly review)]:::todo
+  J --> J8[Outbox Contract v1 + Preview Pack]:::doing
+  J --> J9[Skill Runner v0]:::doing
+  J --> J10[Portfolio Manager (PORTFOLIO.md + weekly review)]:::todo
 
   classDef done fill:#b7f7c5,stroke:#1f7a2e,color:#000;
   classDef doing fill:#ffe8a3,stroke:#8a6d00,color:#000;

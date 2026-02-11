@@ -13,6 +13,8 @@ from app.api.routers.admin import router as admin_router
 from app.api.routers.mindmap import router as mindmap_router
 from app.api.routers.outbox import router as outbox_router
 from app.api.routers.science_grants import router as science_grants_router
+from app.api.routers.skills import router as skills_router
+from app.api.routers.tools import router as tools_router
 from app.core.config import settings
 from app.core.db import engine
 from app.core.logging import configure_logging
@@ -86,3 +88,5 @@ app.include_router(science_grants_router, prefix="/science/grants", tags=["scien
 app.include_router(mindmap_router, prefix="/mindmap", tags=["mindmap"])
 app.include_router(actions_router, prefix="/actions", tags=["actions"])
 app.include_router(outbox_router, prefix="/outbox", tags=["outbox"])
+app.include_router(skills_router, prefix="/skills", tags=["skills"])
+app.include_router(tools_router, prefix="/tools", tags=["tools"])
