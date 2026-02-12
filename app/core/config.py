@@ -41,6 +41,13 @@ class Settings(BaseSettings):
     SOT_ROOT_DIR: str = "."  # repo root inside container
     BOOTSTRAP_MAX_AGE_HOURS: int = 24
 
+    # Outbox real sends
+    OUTBOX_REAL_SEND_ENABLED: bool = False
+
+    # GitHub
+    GITHUB_TOKEN: str | None = None
+    GITHUB_API_BASE: str = "https://api.github.com"
+
     class Config:
         env_file = ".env"
         extra = "ignore"
