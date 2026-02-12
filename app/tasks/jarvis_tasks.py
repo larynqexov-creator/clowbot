@@ -209,7 +209,17 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                         "kind": m.channel,
                         "idempotency_key": m.idempotency_key or "",
                         "context": {"source": "legacy"},
-                        "policy": {"risk": "YELLOW", "requires_approval": False, "allowlist": {}},
+                        # For legacy rows, allow the explicit target by default (preserve old stub behavior).
+                        "policy": {
+                            "risk": "YELLOW",
+                            "requires_approval": False,
+                            "allowlist": {
+                                "email_domains": [],
+                                "emails": [m.to] if m.channel == "email" else [],
+                                "telegram_chats": [m.to] if m.channel == "telegram" else [],
+                                "github_repos": [m.to] if m.channel == "github_issue" else [],
+                            },
+                        },
                         "message": {
                             "chat": {"chat_id": m.to, "username": None},
                             "parse_mode": "Markdown",
@@ -235,6 +245,23 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                 from pydantic import TypeAdapter
 
                 payload: OutboxPayloadV1 = TypeAdapter(OutboxPayloadV1).validate_python(payload_dict)
+
+                # Re-enforce allowlist at dispatch time (in case policy docs changed or legacy rows).
+                try:
+                    from app.policy.allowlist import load_policy_allowlist
+                    from app.core.outbox_policy import enforce_allowlist
+
+                    allow_doc = load_policy_allowlist(db, tenant_id=m.tenant_id)
+                    decision = enforce_allowlist(payload, tenant_allowlist=allow_doc.allowlist)
+                    payload = decision.payload
+                    # Persist upgraded policy back to the outbox row.
+                    if decision.upgraded_to_red:
+                        m.payload = payload.model_dump(by_alias=True)
+                        m.meta = dict(m.meta or {})
+                        m.meta["policy_upgraded_to_red_at_dispatch"] = True
+                        db.commit()
+                except Exception:
+                    pass
 
                 # Approval gate: if requires approval, only dispatch after outbox meta has approved flag.
                 approved = bool((m.meta or {}).get("approved"))
@@ -283,8 +310,81 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                 m.meta["preview"]["object_keys"]["preview_payload_json"] = payload_key
                 m.meta["preview"]["object_keys"][pack.channel_raw_name] = raw_key
 
+                # Sender adapters (real sends) - start with GitHub Issue.
+                if payload.kind == "github_issue":
+                    from app.outbox.adapters.registry import get_adapter
+
+                    ok2, context_version2, _ = check_bootstrap_fresh(db, tenant_id=m.tenant_id)
+
+                    _audit(
+                        db,
+                        tenant_id=m.tenant_id,
+                        user_id=m.user_id,
+                        event_type="OUTBOX_SEND_ATTEMPT",
+                        severity="INFO",
+                        message="send_attempt",
+                        context={"context_version": context_version2, "outbox_id": m.id, "kind": payload.kind},
+                    )
+                    db.commit()
+
+                    adapter = get_adapter(payload.kind)
+                    res = adapter.send(payload=payload, outbox_row=m)
+
+                    if res.status == "SENT":
+                        m.status = "SENT"
+                        m.sent_at = now_utc()
+                        meta2 = dict(m.meta or {})
+                        ext2 = dict(meta2.get("external") or {})
+                        if res.external_id:
+                            ext2["id"] = res.external_id
+                        if res.external_url:
+                            ext2["url"] = res.external_url
+                        if res.raw_response:
+                            ext2["raw"] = res.raw_response
+                        meta2["external"] = ext2
+                        m.meta = meta2
+
+                        _audit(
+                            db,
+                            tenant_id=m.tenant_id,
+                            user_id=m.user_id,
+                            event_type="OUTBOX_SEND_SUCCESS",
+                            severity="INFO",
+                            message="send_success",
+                            context={"context_version": context_version2, "outbox_id": m.id, "external_id": res.external_id, "url": res.external_url},
+                        )
+                        db.commit()
+                        sent += 1
+                    elif res.status == "DRY_RUN_SENT":
+                        m.status = "DRY_RUN_SENT"
+                        m.sent_at = now_utc()
+                        _audit(
+                            db,
+                            tenant_id=m.tenant_id,
+                            user_id=m.user_id,
+                            event_type="OUTBOX_DRY_RUN",
+                            severity="INFO",
+                            message="dry_run",
+                            context={"context_version": context_version2, "outbox_id": m.id, "reason": res.reason},
+                        )
+                        db.commit()
+                        stub_sent += 1
+                    else:
+                        m.status = "FAILED"
+                        _audit(
+                            db,
+                            tenant_id=m.tenant_id,
+                            user_id=m.user_id,
+                            event_type="OUTBOX_SEND_FAILED",
+                            severity="ERROR",
+                            message=res.reason or "send_failed",
+                            context={"context_version": context_version2, "outbox_id": m.id, "retryable": res.retryable},
+                        )
+                        db.commit()
+                        failed += 1
+
                 # Telegram send (real) optional.
-                if payload.kind == "telegram" and settings.TELEGRAM_BOT_TOKEN:
+                elif payload.kind == "telegram" and settings.TELEGRAM_BOT_TOKEN:
                     chat_id = payload.message.chat.chat_id or payload.message.chat.username
                     allow = {x.strip() for x in (settings.TELEGRAM_ALLOWLIST_CHATS or "").split(",") if x.strip()}
                     if not chat_id or chat_id not in allow:
