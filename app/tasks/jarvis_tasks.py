@@ -29,13 +29,21 @@ def process_pending_actions(*, limit: int = 25) -> dict:
 
     db = SessionLocal()
     try:
-        actions = (
+        q = (
             db.query(PendingAction)
             .filter(PendingAction.status == "APPROVED")
             .order_by(PendingAction.created_at.asc())
             .limit(limit)
-            .all()
         )
+
+        # On Postgres, avoid multiple workers picking the same rows.
+        try:
+            if db.bind and db.bind.dialect.name == "postgresql":
+                q = q.with_for_update(skip_locked=True)
+        except Exception:
+            pass
+
+        actions = q.all()
 
         done = 0
         failed = 0
@@ -107,13 +115,21 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
 
     db = SessionLocal()
     try:
-        items = (
+        q = (
             db.query(OutboxMessage)
             .filter(OutboxMessage.status == "QUEUED")
             .order_by(OutboxMessage.created_at.asc())
             .limit(limit)
-            .all()
         )
+
+        # On Postgres, avoid multiple workers picking the same rows.
+        try:
+            if db.bind and db.bind.dialect.name == "postgresql":
+                q = q.with_for_update(skip_locked=True)
+        except Exception:
+            pass
+
+        items = q.all()
 
         sent = 0
         stub_sent = 0
