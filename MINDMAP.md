@@ -56,11 +56,11 @@ mindmap
           ✅ creates pending_action outbox.send
           ✅ BLOCKED if missing inputs (creates tasks)
 
-    ⬜ Next (Roadmap)
-      ⬜ /tasks/{id}/run_skill (TaskType binding)
-      ⬜ Allowlist as document in DB (policy_allowlist)
-      ⬜ Skill: sales_outreach_sequence (runner)
-      ⬜ Dispatcher locking: FOR UPDATE SKIP LOCKED
+    ✅ Next (Roadmap)
+      ✅ /tasks/{id}/run_skill (TaskType binding)
+      ✅ Allowlist as document in DB (policy_allowlist)
+      ✅ Skill: sales_outreach_sequence (runner)
+      ✅ Dispatcher locking: FOR UPDATE SKIP LOCKED
 
     ⬜ Portfolio Manager
       ⬜ Weekly review skill
