@@ -28,8 +28,11 @@ def client(monkeypatch):
     tenant_id = new_uuid()
     task_id = new_uuid()
 
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
+
     with SessionLocal() as db:
         db.add(Tenant(id=tenant_id, name=f"t-{tenant_id}", created_at=now_utc()))
+        seed_min_bootstrap_docs(db, tenant_id=tenant_id)
         db.add(
             Task(
                 id=task_id,

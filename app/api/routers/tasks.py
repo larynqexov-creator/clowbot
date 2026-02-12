@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_ctx
+from app.api.guards import require_bootstrap
 from app.core.db import SessionLocal
 from app.models.tables import AuditLog, Task
 from app.skills.registry import TASKTYPE_TO_SKILL
@@ -50,6 +51,8 @@ def task_run_skill(task_id: str, payload: dict | None = None, ctx=Depends(get_ct
 
     tenant_id, user_id = ctx
 
+    context_version = require_bootstrap(db, tenant_id=tenant_id)
+
     t: Task | None = db.query(Task).filter(Task.id == task_id, Task.tenant_id == tenant_id).one_or_none()
     if not t:
         raise HTTPException(status_code=404, detail="Task not found")
@@ -72,7 +75,7 @@ def task_run_skill(task_id: str, payload: dict | None = None, ctx=Depends(get_ct
         event_type="TASK_RUN_SKILL",
         severity="INFO",
         message=f"task={task_id} task_type={task_type} skill={skill_name}",
-        context={"task_id": task_id, "task_type": task_type, "skill_name": skill_name},
+        context={"task_id": task_id, "task_type": task_type, "skill_name": skill_name, "context_version": context_version},
     )
     db.commit()
 

@@ -18,6 +18,7 @@ def client(monkeypatch):
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import Tenant
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
     from app.util.ids import new_uuid
     from app.util.time import now_utc
 
@@ -29,6 +30,7 @@ def client(monkeypatch):
 
     with SessionLocal() as db:
         db.add(Tenant(id=tenant_id, name=f"t-{tenant_id}", created_at=now_utc()))
+        seed_min_bootstrap_docs(db, tenant_id=tenant_id)
         db.commit()
 
     c = TestClient(app.main.app)
