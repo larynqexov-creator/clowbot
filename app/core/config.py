@@ -37,6 +37,10 @@ class Settings(BaseSettings):
     # Default chat id/username used when ToolRegistry is asked to send Telegram without explicit target.
     TELEGRAM_DEFAULT_CHAT: str = "95576236"
 
+    # Bootstrap / Source-of-Truth
+    SOT_ROOT_DIR: str = "."  # repo root inside container
+    BOOTSTRAP_MAX_AGE_HOURS: int = 24
+
     class Config:
         env_file = ".env"
         extra = "ignore"

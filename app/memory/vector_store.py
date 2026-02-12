@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import time
 from typing import Any, Callable, TypeVar
 
@@ -77,3 +78,40 @@ def search_memory(*, tenant_id: str, query_vector: list[float], top_k: int = 5) 
         return [{"id": r.id, "score": r.score, "payload": r.payload or {}} for r in res]
 
     return _with_retry(_op, attempts=3)
+
+
+def _hash_vector8(text: str) -> list[float]:
+    """Deterministic 8-dim pseudo-embedding based on sha256.
+
+    This is not a semantic embedding, but it enables consistent vector upserts
+    and makes bootstrap logic testable without external embedding services.
+    """
+
+    h = hashlib.sha256(text.encode("utf-8")).digest()
+    # 8 floats in [0,1]
+    vec = [b / 255.0 for b in h[:8]]
+    return vec
+
+
+def upsert_document_text_best_effort(*, tenant_id: str, doc_id: str, domain: str, source_type: str, text: str) -> None:
+    """Best-effort vector upsert for a document.
+
+    If Qdrant is unavailable, silently does nothing.
+    """
+
+    try:
+        if not qdrant_ready():
+            return
+        ensure_qdrant_collection()
+        upsert_memory_vectors(
+            tenant_id=tenant_id,
+            points=[
+                {
+                    "id": doc_id,
+                    "vector": _hash_vector8(text or ""),
+                    "payload": {"domain": domain, "source_type": source_type},
+                }
+            ],
+        )
+    except Exception:
+        return

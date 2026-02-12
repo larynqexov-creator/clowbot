@@ -9,6 +9,7 @@ def test_outbox_dispatcher_stub_sent_creates_preview(monkeypatch):
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import Document, OutboxMessage, Tenant
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
     from app.tasks.jarvis_tasks import dispatch_outbox
     from app.util.ids import new_uuid
     from app.util.time import now_utc
@@ -18,6 +19,7 @@ def test_outbox_dispatcher_stub_sent_creates_preview(monkeypatch):
     tenant_id = new_uuid()
     with SessionLocal() as db:
         db.add(Tenant(id=tenant_id, name=f"t-{tenant_id}", created_at=now_utc()))
+        seed_min_bootstrap_docs(db, tenant_id=tenant_id)
         msg_id = new_uuid()
         db.add(
             OutboxMessage(
@@ -58,6 +60,7 @@ def test_outbox_dispatcher_is_idempotent(monkeypatch):
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import OutboxMessage, Tenant
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
     from app.tasks.jarvis_tasks import dispatch_outbox
     from app.util.ids import new_uuid
     from app.util.time import now_utc
@@ -67,6 +70,7 @@ def test_outbox_dispatcher_is_idempotent(monkeypatch):
     tenant_id = new_uuid()
     with SessionLocal() as db:
         db.add(Tenant(id=tenant_id, name=f"t-{tenant_id}", created_at=now_utc()))
+        seed_min_bootstrap_docs(db, tenant_id=tenant_id)
         msg_id = new_uuid()
         db.add(
             OutboxMessage(

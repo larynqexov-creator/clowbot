@@ -19,6 +19,7 @@ def test_worker_processes_approved_pending_action(monkeypatch):
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import PendingAction, Tenant
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
     from app.tasks.jarvis_tasks import process_pending_actions
     from app.util.ids import new_uuid
     from app.util.time import now_utc
@@ -28,6 +29,7 @@ def test_worker_processes_approved_pending_action(monkeypatch):
     tenant_id = new_uuid()
     with SessionLocal() as db:
         db.add(Tenant(id=tenant_id, name=f"t-{tenant_id}", created_at=now_utc()))
+        seed_min_bootstrap_docs(db, tenant_id=tenant_id)
         action_id = new_uuid()
         db.add(
             PendingAction(

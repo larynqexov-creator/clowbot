@@ -8,6 +8,7 @@ from app.core.db import SessionLocal
 from app.core.tool_registry import ConfirmationRequired, execute_pending_action
 from app.integrations.telegram import TelegramSendError, send_message
 from app.memory.object_store import put_text
+from app.memory.bootstrap import check_bootstrap_fresh
 from app.models.tables import Document, OutboxMessage, PendingAction
 from app.outbox.preview import render_preview_pack
 from app.schemas.outbox_v1 import OutboxPayloadV1
@@ -51,6 +52,21 @@ def process_pending_actions(*, limit: int = 25) -> dict:
 
         for a in actions:
             try:
+                ok, context_version, reason = check_bootstrap_fresh(db, tenant_id=a.tenant_id)
+                _audit(
+                    db,
+                    tenant_id=a.tenant_id,
+                    user_id=a.user_id,
+                    event_type="EXECUTOR_TICK",
+                    severity="INFO" if ok else "WARN",
+                    message="executor_tick",
+                    context={"context_version": context_version, "ok": ok, "reason": reason, "pending_action_id": a.id},
+                )
+                db.commit()
+                if not ok:
+                    # Do not execute without fresh bootstrap.
+                    continue
+
                 res = execute_pending_action(db, action=a)
                 if res.status == "QUEUED":
                     a.status = "DONE"  # action completed by producing an outbox item
@@ -137,15 +153,29 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
 
         for m in items:
             try:
+                ok, context_version, reason = check_bootstrap_fresh(db, tenant_id=m.tenant_id)
+
                 _audit(
                     db,
                     tenant_id=m.tenant_id,
                     user_id=m.user_id,
                     event_type="OUTBOX_DISPATCH_ATTEMPT",
-                    severity="INFO",
+                    severity="INFO" if ok else "WARN",
                     message="dispatch_attempt",
-                    context={"outbox_id": m.id, "channel": m.channel, "to": m.to},
+                    context={
+                        "context_version": context_version,
+                        "ok": ok,
+                        "reason": reason,
+                        "outbox_id": m.id,
+                        "channel": m.channel,
+                        "to": m.to,
+                    },
                 )
+                db.commit()
+
+                if not ok:
+                    # Do not dispatch without fresh bootstrap.
+                    continue
 
                 # Validate/normalize payload (fallback for legacy rows).
                 payload_dict = m.payload

@@ -65,4 +65,13 @@ mindmap
     ✅ Portfolio Manager
       ✅ Weekly review skill
       ✅ Active set 3–7 + scoring
+
+    ✅ Bootstrap / Never Forget
+      ✅ Repo SoT files: BOOTSTRAP.md / NEXT.md / BACKLOG.md
+      ✅ POST /memory/bootstrap (SoT → DB documents + vector best-effort)
+      ✅ GET /memory/bootstrap/status
+      ✅ GET /memory/next
+      ✅ Hard guard: BOOTSTRAP_REQUIRED (/skills/run, /tasks/{id}/run_skill)
+      ✅ Context version in audit (SKILL_RUN_STARTED / EXECUTOR_TICK / OUTBOX_DISPATCH_ATTEMPT)
+      ✅ Tests
 ```
