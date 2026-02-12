@@ -9,6 +9,7 @@ SKILLS: dict[str, SkillFn] = {}
 # Minimal binding (can be expanded)
 TASKTYPE_TO_SKILL: dict[str, str] = {
     "ARTICLE": "submit_article_package",
+    "SALES_OUTREACH": "sales_outreach_sequence",
 }
 
 
