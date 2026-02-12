@@ -61,10 +61,6 @@ mindmap
       ⬜ Allowlist as document in DB (policy_allowlist)
       ⬜ Skill: sales_outreach_sequence (runner)
       ⬜ Dispatcher locking: FOR UPDATE SKIP LOCKED
-      ⬜ Удалённое управление ПК / автозаполнение форм
-        ⬜ Выбор режима: управляемый браузер vs удалённый рабочий стол
-        ⬜ Политики: финальный Submit только по подтверждению
-        ⬜ Playbook/skill: fill_web_form_v1 (шаблон полей + лог шагов)
 
     ⬜ Portfolio Manager
       ⬜ Weekly review skill
