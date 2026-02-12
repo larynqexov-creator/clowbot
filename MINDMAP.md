@@ -62,7 +62,7 @@ mindmap
       ✅ Skill: sales_outreach_sequence (runner)
       ✅ Dispatcher locking: FOR UPDATE SKIP LOCKED
 
-    ⬜ Portfolio Manager
-      ⬜ Weekly review skill
-      ⬜ Active set 3–7 + scoring
+    ✅ Portfolio Manager
+      ✅ Weekly review skill
+      ✅ Active set 3–7 + scoring
 ```
