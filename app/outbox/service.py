@@ -6,6 +6,7 @@ from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
 
 from app.core.outbox_policy import enforce_allowlist
+from app.policy.allowlist import load_policy_allowlist
 from app.models.tables import OutboxMessage
 from app.schemas.outbox_v1 import OutboxPayloadV1, compute_idempotency_key
 from app.util.ids import new_uuid
@@ -24,7 +25,8 @@ def create_outbox_message(*, db: Session, tenant_id: str, user_id: str | None, p
 
     payload: OutboxPayloadV1 = adapter.validate_python(payload_dict)
 
-    decision = enforce_allowlist(payload)
+    allow_doc = load_policy_allowlist(db, tenant_id=tenant_id)
+    decision = enforce_allowlist(payload, tenant_allowlist=allow_doc.allowlist)
     payload = decision.payload
 
     existing = (
