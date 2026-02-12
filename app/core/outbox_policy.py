@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from app.schemas.outbox_v1 import OutboxPayloadV1
+from app.schemas.outbox_v1 import Allowlist, OutboxPayloadV1
 
 
 @dataclass(frozen=True)
@@ -49,8 +49,21 @@ def _github_allowed(payload: OutboxPayloadV1) -> bool:
     return payload.message.repo in allow
 
 
-def enforce_allowlist(payload: OutboxPayloadV1) -> PolicyDecision:
-    """If targets are not allowlisted, auto-upgrade to RED + requires_approval."""
+def enforce_allowlist(payload: OutboxPayloadV1, *, tenant_allowlist: Allowlist | None = None) -> PolicyDecision:
+    """If targets are not allowlisted, auto-upgrade to RED + requires_approval.
+
+    tenant_allowlist, if provided, is merged into payload.policy.allowlist (union).
+    """
+
+    if tenant_allowlist is not None:
+        allow = payload.policy.allowlist
+        payload.policy.allowlist = Allowlist(
+            email_domains=list(dict.fromkeys((allow.email_domains or []) + (tenant_allowlist.email_domains or []))),
+            emails=list(dict.fromkeys((allow.emails or []) + (tenant_allowlist.emails or []))),
+            telegram_chats=list(dict.fromkeys((allow.telegram_chats or []) + (tenant_allowlist.telegram_chats or []))),
+            github_repos=list(dict.fromkeys((allow.github_repos or []) + (tenant_allowlist.github_repos or []))),
+        )
+
     allowed = _email_allowed(payload) and _telegram_allowed(payload) and _github_allowed(payload)
 
     upgraded = False
