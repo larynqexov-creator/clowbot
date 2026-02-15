@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
-from app.models.tables import PendingAction, Task
+from app.models.tables import Task
 from app.skills.registry import SKILLS
 from app.util.ids import new_uuid
 from app.util.time import now_utc
@@ -23,7 +23,17 @@ class SkillRunResult:
 
 def _create_task(db: Session, *, tenant_id: str, title: str, status: str = "TODO", meta: dict | None = None) -> str:
     tid = new_uuid()
-    db.add(Task(id=tid, tenant_id=tenant_id, workflow_id=None, title=title, status=status, meta=meta or {}, created_at=now_utc()))
+    db.add(
+        Task(
+            id=tid,
+            tenant_id=tenant_id,
+            workflow_id=None,
+            title=title,
+            status=status,
+            meta=meta or {},
+            created_at=now_utc(),
+        )
+    )
     return tid
 
 

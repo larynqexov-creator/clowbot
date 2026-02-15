@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import hashlib
-import json
 from dataclasses import dataclass
 from datetime import timedelta
 from pathlib import Path
@@ -54,7 +53,9 @@ def compute_context_version(doc_sha_by_type: dict[str, str]) -> str:
     return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
 
 
-def _audit(db: Session, *, tenant_id: str, user_id: str | None, event_type: str, severity: str, message: str, context: dict) -> None:
+def _audit(
+    db: Session, *, tenant_id: str, user_id: str | None, event_type: str, severity: str, message: str, context: dict
+) -> None:
     db.add(
         AuditLog(
             id=new_uuid(),
@@ -133,7 +134,9 @@ def refresh_bootstrap(
         db.commit()
 
         # Vector upsert best-effort
-        upsert_document_text_best_effort(tenant_id=tenant_id, doc_id=doc.id, domain="sot", source_type=src.doc_type, text=content)
+        upsert_document_text_best_effort(
+            tenant_id=tenant_id, doc_id=doc.id, domain="sot", source_type=src.doc_type, text=content
+        )
 
         updated.append({"doc_type": src.doc_type, "document_id": doc.id, "updated": True})
 
@@ -150,7 +153,12 @@ def refresh_bootstrap(
     )
     db.commit()
 
-    return {"ok": True, "updated": updated, "context_version": context_version, "refreshed_at": refreshed_at.isoformat()}
+    return {
+        "ok": True,
+        "updated": updated,
+        "context_version": context_version,
+        "refreshed_at": refreshed_at.isoformat(),
+    }
 
 
 def bootstrap_status(db: Session, *, tenant_id: str) -> dict[str, Any]:
@@ -171,13 +179,8 @@ def bootstrap_status(db: Session, *, tenant_id: str) -> dict[str, Any]:
         sha = (d.meta or {}).get("content_sha256")
         if sha:
             sha_by_type[src.doc_type] = sha
-        ra = (d.meta or {}).get("refreshed_at")
-        try:
-            # if missing, use created_at
-            pass
-        finally:
-            if refreshed_at_max is None or d.created_at > refreshed_at_max:
-                refreshed_at_max = d.created_at
+        if refreshed_at_max is None or d.created_at > refreshed_at_max:
+            refreshed_at_max = d.created_at
 
     context_version = compute_context_version(sha_by_type) if sha_by_type else None
 

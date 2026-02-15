@@ -95,7 +95,11 @@ def execute_pending_action(db: Session, *, action: PendingAction) -> ToolResult:
         if not outbox_id:
             return ToolResult(ok=False, status="FAILED", detail="Missing outbox_id")
 
-        m = db.query(OutboxMessage).filter(OutboxMessage.id == outbox_id, OutboxMessage.tenant_id == action.tenant_id).one_or_none()
+        m = (
+            db.query(OutboxMessage)
+            .filter(OutboxMessage.id == outbox_id, OutboxMessage.tenant_id == action.tenant_id)
+            .one_or_none()
+        )
         if not m:
             return ToolResult(ok=False, status="FAILED", detail="Outbox message not found")
 
@@ -122,7 +126,11 @@ def execute_pending_action(db: Session, *, action: PendingAction) -> ToolResult:
         channel = "telegram"
         to = (action.payload or {}).get("to") or settings.TELEGRAM_DEFAULT_CHAT
         subject = None
-        body = (action.payload or {}).get("text") or (action.payload or {}).get("body") or (action.payload or {}).get("message")
+        body = (
+            (action.payload or {}).get("text")
+            or (action.payload or {}).get("body")
+            or (action.payload or {}).get("message")
+        )
         if not body:
             body = str(action.payload)
     else:

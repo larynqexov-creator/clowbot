@@ -7,8 +7,8 @@ from app.core.config import settings
 from app.core.db import SessionLocal
 from app.core.tool_registry import ConfirmationRequired, execute_pending_action
 from app.integrations.telegram import TelegramSendError, send_message
-from app.memory.object_store import put_text
 from app.memory.bootstrap import check_bootstrap_fresh
+from app.memory.object_store import put_text
 from app.models.tables import Document, OutboxMessage, PendingAction
 from app.outbox.preview import render_preview_pack
 from app.schemas.outbox_v1 import OutboxPayloadV1
@@ -100,7 +100,9 @@ def process_pending_actions(*, limit: int = 25) -> dict:
         db.close()
 
 
-def _audit(db, *, tenant_id: str, user_id: str | None, event_type: str, severity: str, message: str, context: dict) -> None:
+def _audit(
+    db, *, tenant_id: str, user_id: str | None, event_type: str, severity: str, message: str, context: dict
+) -> None:
     from app.models.tables import AuditLog
 
     db.add(
@@ -248,8 +250,8 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
 
                 # Re-enforce allowlist at dispatch time (in case policy docs changed or legacy rows).
                 try:
-                    from app.policy.allowlist import load_policy_allowlist
                     from app.core.outbox_policy import enforce_allowlist
+                    from app.policy.allowlist import load_policy_allowlist
 
                     allow_doc = load_policy_allowlist(db, tenant_id=m.tenant_id)
                     decision = enforce_allowlist(payload, tenant_allowlist=allow_doc.allowlist)
@@ -286,8 +288,14 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
 
                 # Store raw artifacts (best-effort) to MinIO.
                 base = f"{m.tenant_id}/outbox/{m.id}"
-                raw_key = put_text(object_key=f"{base}/{pack.channel_raw_name}", text=pack.channel_raw, content_type="text/plain")
-                payload_key = put_text(object_key=f"{base}/preview_payload.json", text=pack.preview_payload_json, content_type="application/json")
+                raw_key = put_text(
+                    object_key=f"{base}/{pack.channel_raw_name}", text=pack.channel_raw, content_type="text/plain"
+                )
+                payload_key = put_text(
+                    object_key=f"{base}/preview_payload.json",
+                    text=pack.preview_payload_json,
+                    content_type="application/json",
+                )
 
                 preview_doc = Document(
                     id=new_uuid(),
@@ -351,7 +359,12 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                             event_type="OUTBOX_SEND_SUCCESS",
                             severity="INFO",
                             message="send_success",
-                            context={"context_version": context_version2, "outbox_id": m.id, "external_id": res.external_id, "url": res.external_url},
+                            context={
+                                "context_version": context_version2,
+                                "outbox_id": m.id,
+                                "external_id": res.external_id,
+                                "url": res.external_url,
+                            },
                         )
                         db.commit()
                         sent += 1
@@ -378,7 +391,11 @@ def dispatch_outbox(*, limit: int = 25) -> dict:
                             event_type="OUTBOX_SEND_FAILED",
                             severity="ERROR",
                             message=res.reason or "send_failed",
-                            context={"context_version": context_version2, "outbox_id": m.id, "retryable": res.retryable},
+                            context={
+                                "context_version": context_version2,
+                                "outbox_id": m.id,
+                                "retryable": res.retryable,
+                            },
                         )
                         db.commit()
                         failed += 1

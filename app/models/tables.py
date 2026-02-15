@@ -5,10 +5,10 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import JSON
 
+from app.models.base import Base
+
 # Use JSONB on Postgres, fallback to JSON for SQLite/test environments.
 JSONType = JSON().with_variant(JSONB, "postgresql")
-
-from app.models.base import Base
 
 
 class Tenant(Base):

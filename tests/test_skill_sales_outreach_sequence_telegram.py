@@ -15,14 +15,13 @@ def client(monkeypatch):
     monkeypatch.setenv("ADMIN_TOKEN", "change-me-admin-token")
     monkeypatch.setenv("ENSURE_EXTERNAL_DEPS_ON_STARTUP", "0")
 
+    import app.main
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import Tenant
-    from tests.utils_bootstrap import seed_min_bootstrap_docs
     from app.util.ids import new_uuid
     from app.util.time import now_utc
-
-    import app.main
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
 
     Base.metadata.create_all(bind=engine)
 

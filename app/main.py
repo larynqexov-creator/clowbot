@@ -10,8 +10,8 @@ from sqlalchemy import text
 
 from app.api.routers.actions import router as actions_router
 from app.api.routers.admin import router as admin_router
-from app.api.routers.mindmap import router as mindmap_router
 from app.api.routers.memory import router as memory_router
+from app.api.routers.mindmap import router as mindmap_router
 from app.api.routers.outbox import router as outbox_router
 from app.api.routers.policy import router as policy_router
 from app.api.routers.science_grants import router as science_grants_router

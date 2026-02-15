@@ -45,9 +45,7 @@ def run_grants_workflow_steps(*, db: Session, tenant_id: str, user_id: str, work
     from app.domain.science.grants.mock_sources import mock_grants
 
     wf: Workflow | None = (
-        db.query(Workflow)
-        .filter(Workflow.id == workflow_id, Workflow.tenant_id == tenant_id)
-        .one_or_none()
+        db.query(Workflow).filter(Workflow.id == workflow_id, Workflow.tenant_id == tenant_id).one_or_none()
     )
     if not wf:
         return

@@ -19,10 +19,10 @@ def test_worker_processes_approved_pending_action(monkeypatch):
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import PendingAction, Tenant
-    from tests.utils_bootstrap import seed_min_bootstrap_docs
     from app.tasks.jarvis_tasks import process_pending_actions
     from app.util.ids import new_uuid
     from app.util.time import now_utc
+    from tests.utils_bootstrap import seed_min_bootstrap_docs
 
     Base.metadata.create_all(bind=engine)
 

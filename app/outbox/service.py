@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import json
-
 from pydantic import TypeAdapter
 from sqlalchemy.orm import Session
 
 from app.core.outbox_policy import enforce_allowlist
-from app.policy.allowlist import load_policy_allowlist
 from app.models.tables import OutboxMessage
+from app.policy.allowlist import load_policy_allowlist
 from app.schemas.outbox_v1 import OutboxPayloadV1, compute_idempotency_key
 from app.util.ids import new_uuid
 from app.util.time import now_utc

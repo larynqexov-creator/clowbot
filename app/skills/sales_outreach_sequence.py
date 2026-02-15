@@ -48,7 +48,9 @@ def sales_outreach_sequence(*, db: Session, tenant_id: str, user_id: str | None,
     if not audience:
         created_tasks.append(_create_task(db, tenant_id=tenant_id, title="[SALES] Provide audience (ICP constraints)"))
     if not (chat_id or chat_username):
-        created_tasks.append(_create_task(db, tenant_id=tenant_id, title="[SALES] Provide target Telegram chat_id or chat_username"))
+        created_tasks.append(
+            _create_task(db, tenant_id=tenant_id, title="[SALES] Provide target Telegram chat_id or chat_username")
+        )
 
     if created_tasks:
         db.commit()
@@ -111,7 +113,7 @@ def sales_outreach_sequence(*, db: Session, tenant_id: str, user_id: str | None,
         meta={},
         created_at=now_utc(),
     )
-    out_md = "# Outreach messages\n\n" + "\n\n".join([f"{i+1}. {m}" for i, m in enumerate(messages)]) + "\n"
+    out_md = "# Outreach messages\n\n" + "\n\n".join([f"{i + 1}. {m}" for i, m in enumerate(messages)]) + "\n"
     out_doc = Document(
         id=new_uuid(),
         tenant_id=tenant_id,

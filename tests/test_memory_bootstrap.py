@@ -31,16 +31,15 @@ def client(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("SOT_ROOT_DIR", str(tmp_path))
     monkeypatch.setenv("BOOTSTRAP_MAX_AGE_HOURS", "24")
 
+    import app.main
+
+    # Settings object may already be imported by other tests; enforce runtime overrides.
+    from app.core.config import settings
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import Tenant
     from app.util.ids import new_uuid
     from app.util.time import now_utc
-
-    import app.main
-
-    # Settings object may already be imported by other tests; enforce runtime overrides.
-    from app.core.config import settings
 
     settings.SOT_ROOT_DIR = str(tmp_path)
     settings.BOOTSTRAP_MAX_AGE_HOURS = 24
