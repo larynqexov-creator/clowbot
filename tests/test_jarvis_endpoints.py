@@ -34,9 +34,12 @@ def client(monkeypatch):
     # Seed tenant.
     with SessionLocal() as db:
         from app.models.tables import Tenant
+        from tests.utils_bootstrap import seed_min_bootstrap_docs
 
         tenant_id = new_uuid()
         db.add(Tenant(id=tenant_id, name=f"t-{tenant_id}", created_at=now_utc()))
+        db.commit()
+        seed_min_bootstrap_docs(db, tenant_id=tenant_id)
         db.commit()
 
     c = TestClient(app.main.app)

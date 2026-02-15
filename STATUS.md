@@ -4,6 +4,7 @@
 
 ## Сейчас (MVP → Jarvis слой)
 - [x] Репозиторий содержит self-host MVP (FastAPI + Postgres + Redis + Qdrant + MinIO + Celery)
+- [x] Capture + Project Library v1: /inbox ingest + /projects library index + project mindmap links
 - [x] Science grants workflow (mock) — запуск через API
 - [x] Контракт Jarvis Mode: `CLOWDBOT_SUPERMISSION.md` (v3)
 - [x] Approvals Queue (RED actions): таблица + API + worker executor

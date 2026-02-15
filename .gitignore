@@ -34,3 +34,6 @@ scripts/logs/
 
 # tooling
 .DS_Store
+
+# local object store (tests/dev)
+.local_object_store/

@@ -30,6 +30,9 @@ class Settings(BaseSettings):
     MINIO_BUCKET: str = "clowbot"
     MINIO_SECURE: bool = False
 
+    # Local fallback object store (used in unit tests/offline when MinIO is unavailable)
+    LOCAL_OBJECT_STORE_DIR: str = ".local_object_store"
+
     # Optional integrations (STUB by default)
     TELEGRAM_BOT_TOKEN: str | None = None
     # Comma-separated allowlist of chat ids/usernames (e.g. "@mychannel,123456789")

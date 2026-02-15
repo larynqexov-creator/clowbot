@@ -12,6 +12,8 @@ from app.api.routers.actions import router as actions_router
 from app.api.routers.admin import router as admin_router
 from app.api.routers.mindmap import router as mindmap_router
 from app.api.routers.memory import router as memory_router
+from app.api.routers.projects import router as projects_router
+from app.api.routers.inbox import router as inbox_router
 from app.api.routers.outbox import router as outbox_router
 from app.api.routers.policy import router as policy_router
 from app.api.routers.science_grants import router as science_grants_router
@@ -90,6 +92,8 @@ app.include_router(admin_router, prefix="/admin", tags=["admin"])
 app.include_router(science_grants_router, prefix="/science/grants", tags=["science-grants"])
 app.include_router(mindmap_router, prefix="/mindmap", tags=["mindmap"])
 app.include_router(memory_router, prefix="/memory", tags=["memory"])
+app.include_router(projects_router, prefix="/projects", tags=["projects"])
+app.include_router(inbox_router, prefix="/inbox", tags=["inbox"])
 app.include_router(actions_router, prefix="/actions", tags=["actions"])
 app.include_router(outbox_router, prefix="/outbox", tags=["outbox"])
 app.include_router(policy_router, prefix="/policy", tags=["policy"])

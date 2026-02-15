@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import DateTime, ForeignKey, String, Text
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.types import JSON
@@ -105,6 +105,68 @@ class OutboxMessage(Base):
     status: Mapped[str] = mapped_column(String(20), nullable=False)  # QUEUED/SENDING/STUB_SENT/SENT/FAILED
     created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=False)
     sent_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Project(Base):
+    __tablename__ = "projects"
+    __table_args__ = (UniqueConstraint("tenant_id", "slug", name="uq_projects_tenant_slug"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), nullable=False)
+    slug: Mapped[str] = mapped_column(String(120), nullable=False)
+    title: Mapped[str] = mapped_column(String(300), nullable=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=False, default="ACTIVE")
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class InboxItem(Base):
+    __tablename__ = "inbox_items"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), nullable=False)
+    project_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("projects.id"), nullable=True)
+
+    kind: Mapped[str] = mapped_column(String(50), nullable=False)  # text/file
+    title: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    text: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    object_key: Mapped[str | None] = mapped_column(String(800), nullable=True)
+    content_type: Mapped[str | None] = mapped_column(String(200), nullable=True)
+
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default="QUEUED")
+    tags: Mapped[list[str]] = mapped_column(JSONType, nullable=False, default=list)
+    source: Mapped[str] = mapped_column(String(100), nullable=False, default="api")
+
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProjectAsset(Base):
+    __tablename__ = "project_assets"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id"), nullable=False)
+    inbox_item_id: Mapped[str | None] = mapped_column(String(36), ForeignKey("inbox_items.id"), nullable=True)
+
+    filename: Mapped[str] = mapped_column(String(500), nullable=False)
+    content_type: Mapped[str] = mapped_column(String(200), nullable=False)
+    object_key: Mapped[str] = mapped_column(String(800), nullable=False)
+    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ProjectDecision(Base):
+    __tablename__ = "project_decisions"
+    id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    tenant_id: Mapped[str] = mapped_column(String(36), ForeignKey("tenants.id"), nullable=False)
+    project_id: Mapped[str] = mapped_column(String(36), ForeignKey("projects.id"), nullable=False)
+
+    title: Mapped[str] = mapped_column(String(500), nullable=False)
+    decision: Mapped[str] = mapped_column(Text, nullable=False)
+    rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    links: Mapped[list[dict]] = mapped_column(JSONType, nullable=False, default=list)  # {type,id,title,api_link}
+    created_at: Mapped["DateTime"] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class AuditLog(Base):

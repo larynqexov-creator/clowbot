@@ -27,6 +27,13 @@ mindmap
         ✅ /actions/{id}/approve
         ✅ /actions/{id}/reject
 
+      ✅ Capture & Project Library v1
+        ✅ /inbox/text + /inbox/file
+        ✅ /projects create/list
+        ✅ /projects/{id}/library/index (markdown)
+        ✅ /projects/{id}/decisions (+ markdown view)
+        ✅ /mindmap/project/{id} (click links)
+
       ✅ Outbox
         ✅ outbox_messages table
         ✅ /outbox list

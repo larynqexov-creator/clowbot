@@ -1,5 +1,10 @@
 # NEXT
 
+## CAPTURE & PROJECT LIBRARY v1
+- [x] feat/project-library-v1 ready: pytest x3 green + alembic migration included
+- [ ] Add Telegram Capture Bridge module (optional; feature-flag by TELEGRAM_BOT_TOKEN)
+- [ ] After merge: run `POST /memory/bootstrap` (SoT→DB)
+
 **Single next step** (this file must never be empty).
 
 ## Next step

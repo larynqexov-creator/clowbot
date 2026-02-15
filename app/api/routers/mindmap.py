@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.api.deps import get_ctx
+from app.api.guards import require_bootstrap
 from app.core.db import SessionLocal
 from app.models.tables import Document
 from app.util.ids import new_uuid
@@ -43,6 +44,8 @@ def mindmap_overview() -> dict:
 @router.post("/custom")
 def create_custom_mindmap(payload: dict, ctx=Depends(get_ctx), db: Session = Depends(get_db)) -> dict:
     tenant_id, user_id = ctx
+    require_bootstrap(db, tenant_id=tenant_id)
+
     title = (payload or {}).get("title") or "Custom mindmap"
     mermaid = (payload or {}).get("mermaid")
     if not mermaid:
@@ -69,6 +72,7 @@ def create_custom_mindmap(payload: dict, ctx=Depends(get_ctx), db: Session = Dep
 @router.get("/custom/latest")
 def get_custom_mindmap_latest(ctx=Depends(get_ctx), db: Session = Depends(get_db)) -> dict:
     tenant_id, _ = ctx
+    require_bootstrap(db, tenant_id=tenant_id)
 
     doc: Document | None = (
         db.query(Document)
@@ -86,3 +90,38 @@ def get_custom_mindmap_latest(ctx=Depends(get_ctx), db: Session = Depends(get_db
         return {"id": None, "title": None, "mermaid": None}
 
     return {"id": doc.id, "title": doc.title, "mermaid": doc.content_text, "created_at": doc.created_at}
+
+
+@router.get("/project/{project_id}")
+def get_project_mindmap(project_id: str, ctx=Depends(get_ctx), db: Session = Depends(get_db)) -> dict:
+    tenant_id, _ = ctx
+    require_bootstrap(db, tenant_id=tenant_id)
+
+    doc: Document | None = (
+        db.query(Document)
+        .filter(
+            Document.tenant_id == tenant_id,
+            Document.domain == "mindmap",
+            Document.doc_type == "project_mindmap",
+        )
+        .order_by(Document.created_at.desc())
+        .limit(50)
+        .all()
+    )
+
+    picked: Document | None = None
+    for d in doc or []:
+        if (d.meta or {}).get("project_id") == project_id:
+            picked = d
+            break
+
+    if not picked:
+        raise HTTPException(status_code=404, detail="Project mindmap not found")
+
+    return {
+        "project_id": project_id,
+        "document_id": picked.id,
+        "mermaid": picked.content_text,
+        "map_index": (picked.meta or {}).get("map_index") or {},
+        "created_at": picked.created_at,
+    }
