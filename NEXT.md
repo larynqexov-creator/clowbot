@@ -1,5 +1,8 @@
 # NEXT
 
+## Local Stack Runbook / Stop Script
+- [x] Add PowerShell runbook + safe stop script (dry-run via -WhatIf)
+
 **Single next step** (this file must never be empty).
 
 ## Next step

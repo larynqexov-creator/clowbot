@@ -66,6 +66,9 @@ mindmap
       ✅ Weekly review skill
       ✅ Active set 3–7 + scoring
 
+    ✅ Local Dev Tooling
+      ✅ Local stack runbook + stop script (PowerShell)
+
     ✅ Bootstrap / Never Forget
       ✅ Repo SoT files: BOOTSTRAP.md / NEXT.md / BACKLOG.md
       ✅ POST /memory/bootstrap (SoT → DB documents + vector best-effort)
