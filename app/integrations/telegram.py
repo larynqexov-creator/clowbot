@@ -7,7 +7,9 @@ class TelegramSendError(Exception):
     pass
 
 
-def send_message(*, token: str, chat_id: str, text: str, parse_mode: str | None = None, disable_preview: bool = True) -> dict:
+def send_message(
+    *, token: str, chat_id: str, text: str, parse_mode: str | None = None, disable_preview: bool = True
+) -> dict:
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     payload: dict = {
         "chat_id": chat_id,

@@ -15,13 +15,12 @@ def client(monkeypatch):
     monkeypatch.setenv("ADMIN_TOKEN", "change-me-admin-token")
     monkeypatch.setenv("ENSURE_EXTERNAL_DEPS_ON_STARTUP", "0")
 
+    import app.main
     from app.core.db import SessionLocal, engine
     from app.models.base import Base
     from app.models.tables import Task, Tenant
     from app.util.ids import new_uuid
     from app.util.time import now_utc
-
-    import app.main
 
     Base.metadata.create_all(bind=engine)
 
@@ -40,7 +39,14 @@ def client(monkeypatch):
                 workflow_id=None,
                 title="Run article submit skill",
                 status="TODO",
-                meta={"task_type": "ARTICLE", "inputs": {"manuscript_object_key": "obj://m", "editor_email": "ed@example.com", "journal_name": "J"}},
+                meta={
+                    "task_type": "ARTICLE",
+                    "inputs": {
+                        "manuscript_object_key": "obj://m",
+                        "editor_email": "ed@example.com",
+                        "journal_name": "J",
+                    },
+                },
                 created_at=now_utc(),
             )
         )

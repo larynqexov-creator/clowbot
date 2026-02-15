@@ -1,5 +1,3 @@
-
-
 def test_import_app(monkeypatch):
     # Minimal env for Settings() to load during import.
     monkeypatch.setenv("DATABASE_URL", "sqlite+pysqlite:///:memory:")

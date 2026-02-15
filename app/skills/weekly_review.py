@@ -30,9 +30,7 @@ def weekly_review(*, db: Session, tenant_id: str, user_id: str | None, inputs: d
 
     if portfolio_doc_id and not portfolio_md:
         doc: Document | None = (
-            db.query(Document)
-            .filter(Document.tenant_id == tenant_id, Document.id == portfolio_doc_id)
-            .one_or_none()
+            db.query(Document).filter(Document.tenant_id == tenant_id, Document.id == portfolio_doc_id).one_or_none()
         )
         if doc and doc.content_text:
             portfolio_md = doc.content_text

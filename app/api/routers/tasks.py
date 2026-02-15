@@ -23,7 +23,16 @@ def get_db():
         db.close()
 
 
-def _audit(db: Session, *, tenant_id: str | None, user_id: str | None, event_type: str, severity: str, message: str, context: dict) -> None:
+def _audit(
+    db: Session,
+    *,
+    tenant_id: str | None,
+    user_id: str | None,
+    event_type: str,
+    severity: str,
+    message: str,
+    context: dict,
+) -> None:
     db.add(
         AuditLog(
             id=new_uuid(),
@@ -39,7 +48,9 @@ def _audit(db: Session, *, tenant_id: str | None, user_id: str | None, event_typ
 
 
 @router.post("/{task_id}/run_skill")
-def task_run_skill(task_id: str, payload: dict | None = None, ctx=Depends(get_ctx), db: Session = Depends(get_db)) -> dict:
+def task_run_skill(
+    task_id: str, payload: dict | None = None, ctx=Depends(get_ctx), db: Session = Depends(get_db)
+) -> dict:
     """Run a skill bound to the task's TaskType.
 
     Binding rules:
@@ -66,7 +77,7 @@ def task_run_skill(task_id: str, payload: dict | None = None, ctx=Depends(get_ct
     if not skill_name:
         raise HTTPException(status_code=409, detail=f"No skill binding for task_type={task_type}")
 
-    inputs = ((payload or {}).get("inputs") or meta.get("inputs") or {})
+    inputs = (payload or {}).get("inputs") or meta.get("inputs") or {}
 
     _audit(
         db,
@@ -75,7 +86,12 @@ def task_run_skill(task_id: str, payload: dict | None = None, ctx=Depends(get_ct
         event_type="TASK_RUN_SKILL",
         severity="INFO",
         message=f"task={task_id} task_type={task_type} skill={skill_name}",
-        context={"task_id": task_id, "task_type": task_type, "skill_name": skill_name, "context_version": context_version},
+        context={
+            "task_id": task_id,
+            "task_type": task_type,
+            "skill_name": skill_name,
+            "context_version": context_version,
+        },
     )
     db.commit()
 

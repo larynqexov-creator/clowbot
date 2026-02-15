@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 
 import httpx
@@ -43,7 +42,9 @@ class GitHubIssueAdapter:
         body_md = payload.message.body.markdown
 
         if payload.attachments:
-            body_md += "\n\n---\n## Attachments\n" + "\n".join([f"- {a.filename} ({a.object_key})" for a in payload.attachments])
+            body_md += "\n\n---\n## Attachments\n" + "\n".join(
+                [f"- {a.filename} ({a.object_key})" for a in payload.attachments]
+            )
 
         url = f"{settings.GITHUB_API_BASE.rstrip('/')}/repos/{repo}/issues"
         headers = {
@@ -82,6 +83,8 @@ class GitHubIssueAdapter:
                 "title": j.get("title"),
             }
 
-            return SendResult(status="SENT", external_id=external_id, external_url=external_url, raw_response=raw, retryable=False)
+            return SendResult(
+                status="SENT", external_id=external_id, external_url=external_url, raw_response=raw, retryable=False
+            )
         except Exception as e:
             return SendResult(status="FAILED", retryable=True, reason=f"exception:{type(e).__name__}:{str(e)}")

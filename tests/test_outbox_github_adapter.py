@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 
 def _seed(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "sqlite+pysqlite:///:memory:")
@@ -106,7 +104,12 @@ def test_outbox_github_real_send_mocked(monkeypatch):
             status_code = 201
 
             def json(self):
-                return {"number": 12, "html_url": "https://github.com/o/r/issues/12", "id": 999, "title": json.get("title")}
+                return {
+                    "number": 12,
+                    "html_url": "https://github.com/o/r/issues/12",
+                    "id": 999,
+                    "title": json.get("title"),
+                }
 
             text = ""
 

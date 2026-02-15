@@ -31,9 +31,13 @@ def submit_article_package(*, db: Session, tenant_id: str, user_id: str | None, 
     created_tasks: list[str] = []
 
     if not manuscript_doc_id and not manuscript_object_key:
-        created_tasks.append(_create_task(db, tenant_id=tenant_id, title="[ARTICLE] Provide manuscript_doc_id or manuscript_object_key"))
+        created_tasks.append(
+            _create_task(db, tenant_id=tenant_id, title="[ARTICLE] Provide manuscript_doc_id or manuscript_object_key")
+        )
         if not editor_email:
-            created_tasks.append(_create_task(db, tenant_id=tenant_id, title="[ARTICLE] Provide editor_email (target recipient)"))
+            created_tasks.append(
+                _create_task(db, tenant_id=tenant_id, title="[ARTICLE] Provide editor_email (target recipient)")
+            )
         db.commit()
         return SkillRunResult(
             status="BLOCKED",
@@ -90,7 +94,9 @@ def submit_article_package(*, db: Session, tenant_id: str, user_id: str | None, 
     db.commit()
 
     if not editor_email:
-        created_tasks.append(_create_task(db, tenant_id=tenant_id, title="[ARTICLE] Provide editor_email to build email outbox item"))
+        created_tasks.append(
+            _create_task(db, tenant_id=tenant_id, title="[ARTICLE] Provide editor_email to build email outbox item")
+        )
         db.commit()
         return SkillRunResult(
             status="BLOCKED",

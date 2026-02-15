@@ -40,9 +40,7 @@ def run_grants(ctx=Depends(get_ctx), db: Session = Depends(get_db)):
 def get_workflow(workflow_id: str, ctx=Depends(get_ctx), db: Session = Depends(get_db)):
     tenant_id, _ = ctx
     wf: Workflow | None = (
-        db.query(Workflow)
-        .filter(Workflow.id == workflow_id, Workflow.tenant_id == tenant_id)
-        .one_or_none()
+        db.query(Workflow).filter(Workflow.id == workflow_id, Workflow.tenant_id == tenant_id).one_or_none()
     )
     if not wf:
         raise HTTPException(status_code=404, detail="Workflow not found")

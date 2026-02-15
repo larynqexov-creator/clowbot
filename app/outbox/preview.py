@@ -42,7 +42,7 @@ def _email_eml(payload: OutboxPayloadV1) -> str:
         f"Date: {_now_iso()}\n"
         f"Message-ID: <clowbot-{payload.idempotency_key}@local>\n"
         f"MIME-Version: 1.0\n"
-        f"Content-Type: text/plain; charset=\"utf-8\"\n"
+        f'Content-Type: text/plain; charset="utf-8"\n'
         f"\n"
         f"{body_text}\n"
     )
@@ -64,7 +64,9 @@ def _telegram_preview_json(payload: OutboxPayloadV1) -> str:
         "parse_mode": None if msg.parse_mode == "Plain" else msg.parse_mode,
         "disable_web_page_preview": msg.disable_web_page_preview,
     }
-    return json.dumps({"adapter_kind": "telegram", "method": "sendMessage", "params": params}, ensure_ascii=False, indent=2)
+    return json.dumps(
+        {"adapter_kind": "telegram", "method": "sendMessage", "params": params}, ensure_ascii=False, indent=2
+    )
 
 
 def _github_issue_preview_json(payload: OutboxPayloadV1) -> str:
@@ -116,17 +118,14 @@ def render_preview_pack(*, outbox_id: str, payload: OutboxPayloadV1, status: str
     else:
         body_md = payload.message.body.markdown
 
-    preview_md = (
-        fm
-        + f"# Outbox Preview — {payload.kind.upper()}\n\n"
-        + "## Body\n\n"
-        + "```\n"
-        + body_md
-        + "\n```\n\n"
-    )
+    preview_md = fm + f"# Outbox Preview — {payload.kind.upper()}\n\n" + "## Body\n\n" + "```\n" + body_md + "\n```\n\n"
 
     if payload.attachments:
-        preview_md += "## Attachments\n" + "\n".join([f"- {a.filename} ({a.content_type}) — {a.object_key}" for a in payload.attachments]) + "\n"
+        preview_md += (
+            "## Attachments\n"
+            + "\n".join([f"- {a.filename} ({a.content_type}) — {a.object_key}" for a in payload.attachments])
+            + "\n"
+        )
 
     if payload.kind == "email":
         raw = _email_eml(payload)

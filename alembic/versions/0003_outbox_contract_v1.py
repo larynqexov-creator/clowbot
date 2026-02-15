@@ -8,6 +8,7 @@ Create Date: 2026-02-11
 from __future__ import annotations
 
 import sqlalchemy as sa
+
 from alembic import op
 
 revision = "0003_outbox_contract_v1"
